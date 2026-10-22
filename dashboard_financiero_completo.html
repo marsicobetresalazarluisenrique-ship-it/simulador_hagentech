@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HagenAcademy - Terminal de Análisis Financiero</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN for Professional Financial Visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter & JetBrains Mono -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            bg: '#070a12',
+                            card: '#0d1322',
+                            border: '#1a243a',
+                            hover: '#151e33',
+                            green: '#00ff88',
+                            red: '#ff3366',
+                            cyan: '#00e5ff',
+                            text: '#94a3b8',
+                            bright: '#f8fafc'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #070a12;
+            color: #94a3b8;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+        .font-mono-val {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #070a12;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1a243a;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00ff88;
+        }
+        /* Gauge Arc styling */
+        .gauge-container {
+            position: relative;
+            width: 160px;
+            height: 80px;
+        }
+        .gauge-bg {
+            fill: none;
+            stroke: #1a243a;
+            stroke-width: 12;
+        }
+        .gauge-fill {
+            fill: none;
+            stroke-width: 12;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.8s ease, stroke 0.5s ease;
+        }
+        .neon-glow-green {
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.15);
+        }
+        .neon-border-green:focus {
+            border-color: #00ff88;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+        }
+    </style>
+</head>
+<body class="p-2 md:p-4 min-h-screen flex flex-col justify-between">
+
+    <!-- MAIN CONTAINER -->
+    <div class="max-w-7xl mx-auto w-full flex flex-col gap-4">
+        
+        <!-- HEADER BAR & BRANDING -->
+        <header class="bg-cyber-card border border-cyber-border rounded-xl p-4 flex flex-wrap justify-between items-center gap-4 neon-glow-green">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-cyber-green/10 border border-cyber-green/40 flex items-center justify-center text-cyber-green font-bold text-xl">
+                    <i class="fa-solid font-mono"><span class="text-cyber-cyan">H</span>A</i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-cyber-bright tracking-wide flex items-center gap-2">
+                        HAGENACADEMY <span class="text-xs px-2 py-0.5 rounded bg-cyber-green/20 text-cyber-green border border-cyber-green/30 uppercase tracking-widest font-mono">Terminal v2026</span>
+                    </h1>
+                    <p class="text-xs text-cyber-text">Dashboard Financiero e Inspección de Activos estilo TradingView</p>
+                </div>
+            </div>
+
+            <!-- QUICK STATS SUMMARY HEADER -->
+            <div class="flex items-center gap-6 text-xs border-l border-cyber-border pl-6 hidden lg:flex">
+                <div>
+                    <span class="block text-cyber-text">ESTADO DEL MERCADO</span>
+                    <span class="text-cyber-green font-semibold flex items-center gap-1">
+                        <span class="w-2 h-2 rounded-full bg-cyber-green animate-pulse"></span> Mercado Abierto
+                    </span>
+                </div>
+                <div>
+                    <span class="block text-cyber-text">ACTIVOS CUBIERTOS</span>
+                    <span class="text-cyber-bright font-mono-val font-semibold">12 Tickers HQ</span>
+                </div>
+                <div>
+                    <span class="block text-cyber-text">FECHA SISTEMA</span>
+                    <span class="text-cyber-bright font-mono-val">OCT 2026</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- TRADINGVIEW STYLE NAVIGATION TOOLBAR -->
+        <nav class="bg-cyber-card border border-cyber-border rounded-xl p-2 flex flex-wrap items-center justify-between gap-2 text-sm">
+            
+            <!-- TICKER SELECTOR DROPDOWN -->
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+                <span class="text-xs text-cyber-text font-mono uppercase pl-2">Ticker:</span>
+                <div class="relative w-full sm:w-56">
+                    <select id="tickerSelector" onchange="changeTicker(this.value)" class="w-full bg-cyber-bg border border-cyber-border rounded-lg px-3 py-2 text-cyber-bright font-mono-val font-bold text-base focus:outline-none neon-border-green cursor-pointer">
+                        <option value="VOO">VOO - Vanguard S&P 500 ETF</option>
+                        <option value="QQQ">QQQ - Invesco QQQ Trust</option>
+                        <option value="VXUS">VXUS - Vanguard Total Intl</option>
+                        <option value="META" selected>META - Meta Platforms Class A</option>
+                        <option value="AAPL">AAPL - Apple Inc.</option>
+                        <option value="NVDA">NVDA - NVIDIA Corporation</option>
+                        <option value="PLTR">PLTR - Palantir Technologies</option>
+                        <option value="SNAP">SNAP - Snap Inc.</option>
+                        <option value="NFLX">NFLX - Netflix Inc.</option>
+                        <option value="MSFT">MSFT - Microsoft Corp.</option>
+                        <option value="TSLA">TSLA - Tesla Inc.</option>
+                        <option value="AVGO">AVGO - Broadcom Inc.</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- CATEGORY BUTTONS (TradingView Toolset) -->
+            <div class="flex items-center gap-1 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
+                <button onclick="switchTab('financials')" id="tab-financials" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-medium border border-cyber-green bg-cyber-green/10 text-cyber-green flex items-center gap-1.5 whitespace-nowrap transition">
+                    <i class="fa-solid fa-chart-pie">i</i> Info Financiera
+                </button>
+                <button onclick="switchTab('technical')" id="tab-technical" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-medium border border-transparent text-cyber-text hover:text-cyber-bright hover:bg-cyber-hover flex items-center gap-1.5 whitespace-nowrap transition">
+                    <i class="fa-solid fa-gauge-high"></i> Datos Técnicos
+                </button>
+                <button onclick="switchTab('earnings')" id="tab-earnings" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-medium border border-transparent text-cyber-text hover:text-cyber-bright hover:bg-cyber-hover flex items-center gap-1.5 whitespace-nowrap transition">
+                    <i class="fa-solid fa-square-poll-vertical"></i> Resultados Q1-Q4
+                </button>
+                <button onclick="switchTab('news')" id="tab-news" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-medium border border-transparent text-cyber-text hover:text-cyber-bright hover:bg-cyber-hover flex items-center gap-1.5 whitespace-nowrap transition">
+                    <i class="fa-regular fa-newspaper"></i> Noticias
+                </button>
+            </div>
+
+            <!-- CUSTOMIZE VIEW BUTTON -->
+            <div class="hidden md:flex items-center gap-2">
+                <button onclick="toggleAllSections()" class="px-3 py-1.5 bg-cyber-bg hover:bg-cyber-hover border border-cyber-border text-cyber-text hover:text-cyber-bright rounded-lg text-xs flex items-center gap-1.5 transition">
+                    <i class="fa-solid fa-sliders"></i> Personalizar Vista
+                </button>
+            </div>
+        </nav>
+
+        <!-- DASHBOARD GRID CONTENT -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            
+            <!-- LEFT / TOP MAIN TICKER CARD & SUMMARY (8 COLS) -->
+            <div class="lg:col-span-8 flex flex-col gap-4">
+                
+                <!-- TICKER HEADER CARD -->
+                <div class="bg-cyber-card border border-cyber-border rounded-xl p-5 relative overflow-hidden">
+                    <div class="flex flex-wrap justify-between items-start gap-4">
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <h2 id="assetName" class="text-2xl font-bold text-cyber-bright tracking-tight">Meta Platforms Inc Class A</h2>
+                                <span id="assetExchange" class="text-xs px-2 py-0.5 rounded bg-cyber-border text-cyber-text font-mono">NASDAQ</span>
+                            </div>
+                            <p id="assetSector" class="text-xs text-cyber-text">Servicios tecnológicos • Software y servicios de Internet</p>
+                        </div>
+                        <div class="text-right">
+                            <div id="assetPrice" class="text-3xl font-bold font-mono-val text-cyber-bright">$647.26</div>
+                            <div id="assetChange" class="text-sm font-semibold font-mono-val text-cyber-red flex items-center justify-end gap-1">
+                                <i class="fa-solid fa-caret-down"></i> -$50.20 (-7.21%)
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- VOLUME AND MARKET STATS STRIP -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-4 border-t border-cyber-border/60 text-xs">
+                        <div>
+                            <span class="text-cyber-text block">Volumen Actual</span>
+                            <span id="assetVol" class="text-cyber-bright font-mono-val font-semibold">27.73M</span>
+                        </div>
+                        <div>
+                            <span class="text-cyber-text block">Volumen Prom. (30d)</span>
+                            <span id="assetAvgVol" class="text-cyber-bright font-mono-val font-semibold">21.01M</span>
+                        </div>
+                        <div>
+                            <span class="text-cyber-text block">Cap. de Mercado</span>
+                            <span id="assetMarketCap" class="text-cyber-bright font-mono-val font-semibold">1.65T USD</span>
+                        </div>
+                        <div>
+                            <span class="text-cyber-text block">Ratio P/E (TTM)</span>
+                            <span id="assetPE" class="text-cyber-bright font-mono-val font-semibold">23.79</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- EARNINGS / BENEFICIOS (Q1-Q4) SECTION -->
+                <div id="section-earnings" class="bg-cyber-card border border-cyber-border rounded-xl p-5 flex flex-col gap-4">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h3 class="text-base font-bold text-cyber-bright flex items-center gap-2">
+                                <i class="fa-solid fa-chart-column text-cyber-green"></i> Beneficios Trimestrales (Q1 - Q4)
+                            </h3>
+                            <p class="text-xs text-cyber-text">Comparativa de Resultado Real vs Estimación de Analistas</p>
+                        </div>
+                        <!-- Period toggle -->
+                        <div class="flex bg-cyber-bg p-1 rounded-lg border border-cyber-border text-xs">
+                            <button id="btn-quarterly" onclick="toggleEarningsPeriod('quarterly')" class="px-2.5 py-1 rounded-md text-cyber-bright bg-cyber-border font-medium">Trimestral</button>
+                            <button id="btn-annual" onclick="toggleEarningsPeriod('annual')" class="px-2.5 py-1 rounded-md text-cyber-text hover:text-cyber-bright transition">Anual</button>
+                        </div>
+                    </div>
+
+                    <!-- Chart Container -->
+                    <div class="relative w-full h-64">
+                        <canvas id="earningsChart"></canvas>
+                    </div>
+
+                    <div class="flex items-center justify-center gap-6 text-xs border-t border-cyber-border/40 pt-3">
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-cyber-green inline-block"></span>
+                            <span class="text-cyber-text">Resultado Real ($/Acción)</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-cyber-cyan inline-block"></span>
+                            <span class="text-cyber-text">Estimación ($/Acción)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FINANCIALS & VALUATION RATIOS CHART SECTION -->
+                <div id="section-financials" class="bg-cyber-card border border-cyber-border rounded-xl p-5 flex flex-col gap-4">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h3 class="text-base font-bold text-cyber-bright flex items-center gap-2">
+                                <i class="fa-solid fa-vault text-cyber-cyan"></i> Cuenta de Resultados e Ingresos vs Beneficio Neto
+                            </h3>
+                            <p class="text-xs text-cyber-text">Evolución de Ingresos y Márgenes Operativos</p>
+                        </div>
+                    </div>
+
+                    <!-- Revenue & Income Chart -->
+                    <div class="relative w-full h-64">
+                        <canvas id="financialsChart"></canvas>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- RIGHT PANEL - TECHNICAL ANALYSIS, NEWS & KEY STATS (4 COLS) -->
+            <div class="lg:col-span-4 flex flex-col gap-4">
+                
+                <!-- KEY STATS CARD -->
+                <div id="section-keystats" class="bg-cyber-card border border-cyber-border rounded-xl p-5 flex flex-col gap-3">
+                    <h3 class="text-sm font-bold text-cyber-bright uppercase tracking-wider border-b border-cyber-border pb-2 flex items-center justify-between">
+                        <span>Estadísticas Clave</span>
+                        <i class="fa-solid fa-list-check text-cyber-green text-xs"></i>
+                    </h3>
+
+                    <div class="space-y-2.5 text-xs">
+                        <div class="flex justify-between items-center">
+                            <span class="text-cyber-text">Próximo Informe Resultados</span>
+                            <span id="statEarningsDate" class="text-cyber-bright font-mono-val font-medium">21 Oct 2026</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-cyber-text">Rendimiento Dividendo</span>
+                            <span id="statDividendYield" class="text-cyber-bright font-mono-val font-medium">0.30%</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-cyber-text">Último Pago Dividendo</span>
+                            <span id="statLastDividend" class="text-cyber-bright font-mono-val font-medium">$0.525 USD</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-cyber-text">BPA TTM (EPS)</span>
+                            <span id="statEPS" class="text-cyber-bright font-mono-val font-medium">23.79</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-cyber-text">Rango 52 Semanas</span>
+                            <span id="statRange52" class="text-cyber-bright font-mono-val font-medium">$450.10 - $710.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TECHNICAL ANALYSIS GAUGE METER -->
+                <div id="section-technical" class="bg-cyber-card border border-cyber-border rounded-xl p-5 flex flex-col items-center text-center gap-3">
+                    <h3 class="text-sm font-bold text-cyber-bright uppercase tracking-wider w-full text-left border-b border-cyber-border pb-2 flex items-center justify-between">
+                        <span>Análisis Técnico</span>
+                        <i class="fa-solid fa-compass text-cyber-cyan text-xs"></i>
+                    </h3>
+
+                    <!-- SVG Gauge -->
+                    <div class="gauge-container mt-2">
+                        <svg class="w-full h-full" viewBox="0 0 100 50">
+                            <!-- Background Arc -->
+                            <path class="gauge-bg" d="M 10 50 A 40 40 0 0 1 90 50" />
+                            <!-- Colored Filled Arc -->
+                            <path id="gaugePath" class="gauge-fill" d="M 10 50 A 40 40 0 0 1 90 50" stroke="#00ff88" stroke-dasharray="126" stroke-dashoffset="30" />
+                        </svg>
+                        <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 font-bold font-mono-val text-sm" id="gaugeValueText">
+                            COMPRA FUERTE
+                        </div>
+                    </div>
+
+                    <p class="text-xs text-cyber-text px-2">Basado en osciladores técnicos y medias móviles en tiempo real.</p>
+                    
+                    <div class="grid grid-cols-3 w-full text-center text-xs border-t border-cyber-border/40 pt-3 mt-1">
+                        <div>
+                            <span class="block text-cyber-red font-bold">Venta</span>
+                            <span id="techSellCount" class="text-cyber-bright font-mono-val">2</span>
+                        </div>
+                        <div>
+                            <span class="block text-cyber-text font-bold">Neutro</span>
+                            <span id="techNeutralCount" class="text-cyber-bright font-mono-val">5</span>
+                        </div>
+                        <div>
+                            <span class="block text-cyber-green font-bold">Compra</span>
+                            <span id="techBuyCount" class="text-cyber-bright font-mono-val">15</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RECENT NEWS SIDEBAR -->
+                <div id="section-news" class="bg-cyber-card border border-cyber-border rounded-xl p-5 flex flex-col gap-3">
+                    <h3 class="text-sm font-bold text-cyber-bright uppercase tracking-wider border-b border-cyber-border pb-2 flex items-center justify-between">
+                        <span>Noticias Recientes</span>
+                        <i class="fa-regular fa-newspaper text-cyber-green text-xs"></i>
+                    </h3>
+
+                    <div id="newsContainer" class="space-y-3">
+                        <!-- Dynamic news inserted via JS -->
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- FOOTER BRANDING -->
+        <footer class="bg-cyber-card border border-cyber-border rounded-xl p-3 text-center text-xs text-cyber-text">
+             HagenAcademy Terminal de Análisis &copy; 2026. Todos los derechos reservados.
+        </footer>
+
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // DATASET V2026 FOR 12 ASSETS
+        const tickerData = {
+            "META": {
+                name: "Meta Platforms Inc Class A",
+                exchange: "NASDAQ",
+                sector: "Servicios tecnológicos • Software y Servicios",
+                price: "$647.26",
+                change: "-$50.20 (-7.21%)",
+                isNegative: true,
+                vol: "27.73M",
+                avgVol: "21.01M",
+                marketCap: "1.65T USD",
+                pe: "23.79",
+                nextEarnings: "21 Oct 2026",
+                divYield: "0.30%",
+                lastDiv: "$0.525 USD",
+                eps: "23.79",
+                range52: "$450.10 - $710.00",
+                gaugeStatus: "COMPRA FUERTE",
+                gaugeScore: 80, // 0 to 100
+                techSell: 2, techNeutral: 4, techBuy: 16,
+                earnings: {
+                    quarterly: { labels: ['Q4 25', 'Q1 26', 'Q2 26', 'Q3 26'], real: [5.33, 4.71, 5.16, 5.80], est: [4.90, 4.32, 4.78, 5.25] },
+                    annual: { labels: ['2023', '2024', '2025', '2026 (E)'], real: [14.87, 18.20, 21.40, 23.79], est: [14.10, 17.80, 20.50, 22.90] }
+                },
+                financials: {
+                    labels: ['2023', '2024', '2025', '2026 (E)'],
+                    revenue: [134.9, 156.2, 178.4, 201.1],
+                    netIncome: [39.1, 48.5, 56.2, 64.8]
+                },
+                news: [
+                    { title: "Las acciones de Meta corrigen tras el fuerte gasto anunciado en infraestructura de IA.", time: "Hace 1 hora" },
+                    { title: "Meta expande sus centros de datos cuánticos en Norteamérica para 2027.", time: "Hace 5 horas" },
+                    { title: "Analistas reiteran recomendación sobre Meta tras aumento de ingresos publicitarios.", time: "Hace 12 horas" }
+                ]
+            },
+            "VOO": {
+                name: "Vanguard S&P 500 ETF",
+                exchange: "NYSE Arca",
+                sector: "Fondos Cotizados • Renta Variable EE.UU.",
+                price: "$512.40",
+                change: "+$3.15 (+0.62%)",
+                isNegative: false,
+                vol: "4.12M",
+                avgVol: "3.85M",
+                marketCap: "1.12T USD",
+                pe: "26.40",
+                nextEarnings: "N/A (ETF)",
+                divYield: "1.32%",
+                lastDiv: "$1.85 USD",
+                eps: "N/A",
+                range52: "$410.00 - $525.00",
+                gaugeStatus: "COMPRA",
+                gaugeScore: 70,
+                techSell: 1, techNeutral: 6, techBuy: 13,
+                earnings: {
+                    quarterly: { labels: ['Q4 25', 'Q1 26', 'Q2 26', 'Q3 26'], real: [2.10, 2.15, 2.22, 2.30], est: [2.05, 2.10, 2.18, 2.25] },
+                    annual: { labels: ['2023', '2024', '2025', '2026 (E)'], real: [7.80, 8.40, 9.10, 9.80], est: [7.60, 8.20, 8.90, 9.50] }
+                },
+                financials: {
+                    labels: ['2023', '2024', '2025', '2026 (E)'],
+                    revenue: [410.0, 480.0, 520.0, 590.0],
+                    netIncome: [85.0, 98.0, 110.0, 125.0]
+                },
+                news: [
+                    { title: "El S&P 500 marca nuevo máximo impulsado por el sector tecnológico.", time: "Hace 2 horas" },
+                    { title: "Entradas récord de capital hacia el ETF VOO en el último trimestre.", time: "Hace 8 horas" }
+                ]
+            },
+            "QQQ": {
+                name: "Invesco QQQ Trust Series 1",
+                exchange: "NASDAQ",
+                sector: "Fondos Cotizados • Tecnológicas Gran Cap",
+                price: "$485.90",
+                change: "+$5.40 (+1.12%)",
+                isNegative: false,
+                vol: "32.10M",
+                avgVol: "30.50M",
+                marketCap: "285B USD",
+                pe: "31.20",
+                nextEarnings: "N/A (ETF)",
+                divYield: "0.58%",
+                lastDiv: "$0.68 USD",
+                eps: "N/A",
+                range52: "$360.00 - $500.00",
+                gaugeStatus: "COMPRA FUERTE",
+                gaugeScore: 85,
+                techSell: 1, techNeutral: 3, techBuy: 18,
+                earnings: {
+                    quarterly: { labels: ['Q4 25', 'Q1 26', 'Q2 26', 'Q3 26'], real: [3.10, 3.25, 3.40, 3.60], est: [3.00, 3.15, 3.30, 3.45] },
+                    annual: { labels: ['2023', '2024', '2025', '2026 (E)'], real: [11.20, 12.80, 14.50, 16.10], est: [10.90, 12.40, 14.00, 15.60] }
+                },
+                financials: {
+                    labels: ['2023', '2024', '2025', '2026 (E)'],
+                    revenue: [210.0, 250.0, 290.0, 340.0],
+                    netIncome: [52.0, 64.0, 75.0, 88.0]
+                },
+                news: [
+                    { title: "Invesco QQQ encabeza las ganancias semanales del sector de alta tecnología.", time: "Hace 3 horas" },
+                    { title: "Perspectivas positivas sobre el índice Nasdaq-100 para el cierre de año.", time: "Hace 6 horas" }
+                ]
+            },
+            "VXUS": {
+                name: "Vanguard Total International Stock ETF",
+                exchange: "NASDAQ",
+                sector: "Fondos Cotizados • Renta Variable Global Ex-US",
+                price: "$62.15",
+                change: "-$0.35 (-0.56%)",
+                isNegative: true,
+                vol: "2.85M",
+                avgVol: "3.10M",
+                marketCap: "72B USD",
+                pe: "14.80",
+                nextEarnings: "N/A (ETF)",
+                divYield: "3.10%",
+                lastDiv: "$0.58 USD",
+                eps: "N/A",
+                range52: "$52.00 - $65.50",
+                gaugeStatus: "NEUTRO",
+                gaugeScore: 50,
+                techSell: 5, techNeutral: 10, techBuy: 7,
+                earnings: {
+                    quarterly: { labels: ['Q4 25', 'Q1 26', 'Q2 26', 'Q3 26'], real: [0.45, 0.48, 0.50, 0.52], est: [0.44, 0.47, 0.49, 0.51] },
+                    annual: { labels: ['2023', '2024', '2025', '2026 (E)'], real: [1.80, 1.95, 2.10, 2.25], est: [1.75, 1.90, 2.05, 2.20] }
+                },
+                financials: {
+                    labels: ['2023', '2024', '2025', '2026 (E)'],
+                    revenue: [95.0, 105.0, 115.0, 125.0],
+                    netIncome: [18.0, 21.0, 23.0, 26.0]
+                },
+                news: [
+                    { title: "Mercados internacionales muestran estabilidad ante políticas monetarias en Europa.", time: "Hace 10 horas" }
+                ]
+            },
+            "AAPL": {
+                name: "Apple Inc.",
+                exchange: "NASDAQ",
+                sector: "Tecnología de Consumo • Hardware",
+                price: "$232.80",
+                change: "+$2.10 (+0.91%)",
+                isNegative: false,
+                vol: "48.20M",
+                avgVol: "45.00M",
+                marketCap: "3.52T USD",
+                pe: "33.50",
+                nextEarnings: "30 Oct 2026",
+                divYield: "0.45%",
+                lastDiv: "$0.25 USD",
+                eps: "6.95",
+                range52: "$165.00 - $237.20",
+                gaugeStatus: "COMPRA",
+                gaugeScore: 72,
+                techSell: 2, techNeutral: 5, techBuy: 15,
+                earnings: {
+                    quarterly: { labels: ['Q4 25', 'Q1 26', 'Q2 26', 'Q3 26'], real: [2.18, 1.53, 1.40, 1.64], est: [2.10, 1.50, 1.35, 1.60] },
+                    annual: { labels: ['2023', '2024', '2025', '2026 (E)'], real: [6.13, 6.57, 7.10, 7.80], est: [6.00, 6.45, 7.00, 7.65] }
+                },
+                financials: {
+                    labels: ['2023', '2024', '2025', '2026 (E)'],
+                    revenue: [383.3, 391.0, 412.0, 440.0],
+                    netIncome: [97.0, 100.5, 108.0, 118.0]
+                },
+                news: [
+                    { title: "Apple presenta avances en su integración de inteligencia artificial para dispositivos Pro.", time: "Hace 4 horas" },
+                    { title: "Aumento de ventas de iPhone en mercados emergentes impulsa proyecciones.", time: "Hace 7 horas" }
+                ]
+            },
+            "NVDA": {
+                name: "NVIDIA Corporation",
+                exchange: "NASDAQ",
+                sector: "Semiconductores • Hardware IA",
+                price: "$138.50",
+                change: "+$4.20 (+3.13%)",
+                isNegative: false,
+                vol: "65.40M",
+                avgVol: "60.10M",
+                marketCap: "3.40T USD",
+                pe: "42.10",
+                nextEarnings: "18 Nov 2026",
+                divYield: "0.08%",
+                lastDiv: "$0.01 USD",
+                eps: "3.28",
+                range52: "$40.00 - $140.70",
+                gaugeStatus: "COMPRA FUERTE",
+                gaugeScore: 92,
+                techSell: 0, techNeutral: 2, techBuy: 20,
+                earnings: {
+                    quarterly: { labels: ['Q4 25', 'Q1 26', 'Q2 26', 'Q3 26'], real: [0.52, 0.61, 0.68, 0.75], est: [0.48, 0.58, 0.64, 0.70] },
+                    annual: { labels: ['2023', '2024', '2025', '2026 (E)'], real: [1.19, 2.45, 3.28, 4.10], est: [1.10, 2.30, 3.15, 3.95] }
+                },
+                financials: {
+                    labels: ['2023', '2024', '2025', '2026 (E)'],
+                    revenue: [60.9, 96.3, 125.0, 160.0],
+                    netIncome: [29.7, 53.0, 71.0, 90.0]
+                },
+                news: [
+                    { title: "NVIDIA anuncia la entrega masiva de sus nuevos chips para centros de datos supercomputacionales.", time: "Hace 30 mins" },
+                    { title: "Demanda sin precedentes de aceleradores gráficos consolida el liderazgo de NVIDIA.", time: "Hace 3 horas" }
+                ]
+            },
+            "PLTR": {
+                name: "Palantir Technologies Inc Class A",
+                exchange: "NASDAQ",
+                sector: "Servicios tecnológicos • Software empaquetado",
+                price: "$197.68",
+                change: "-$4.04 (-2.00%)",
+                isNegative: true,
+                vol: "11.39M",
+                avgVol: "23.15M",
+                marketCap: "477.44B USD",
+                pe: "171.00",
+                nextEarnings: "En 11 días",
+                divYield: "0.00%",
+                lastDiv: "N/A",
+                eps: "1.15",
+                range52: "$15.00 - $210.00",
+                gaugeStatus: "COMPRA",
+                gaugeScore: 78,
+                techSell: 2, techNeutral: 4, techBuy: 16,
+                earnings: {
+                    quarterly: { labels: ['Q3 25', 'Q4 25', 'Q1 26', 'Q2 26'], real: [0.10, 0.12, 0.14, 0.16], est: [0.08, 0.10, 0.12, 0.14] },
+                    annual: { labels: ['2023', '2024', '2025', '2026 (E)'], real: [0.25, 0.40, 0.75, 1.15], est: [0.20, 0.35, 0.70, 1.05] }
+                },
+                financials: {
+                    labels: ['2023', '2024', '2025', '2026 (E)'],
+                    revenue: [2.23, 2.80, 3.60, 4.50],
+                    netIncome: [0.21, 0.45, 0.90, 1.35]
+                },
+                news: [
+                    { title: "Palantir amplia la IA soberana con nuevos clientes gubernamentales emblemáticos.", time: "Hace 21 horas" },
+                    { title: "Contrato multimillonario de defensa impulsa la plataforma AIP de Palantir.", time: "Hace 1 día" }
+                ]
+            },
+            "SNAP": {
+                name: "Snap Inc. Class A",
+                exchange: "NYSE",
+                sector: "Redes Sociales • Tecnología",
+                price: "$10.85",
+                change: "-$0.42 (-3.73%)",
+                isNegative: true,
+                vol: "18.50M",
+                avgVol: "22.10M",
+                marketCap: "17.8B USD",
+                pe: "N/A (Pérdida)",
+                nextEarnings: "04 Nov 2026",
+                divYield: "0.00%",
+                lastDiv: "N/A",
+                eps: "-0.38",
+                range52: "$8.50 - $16.20",
+                gaugeStatus: "VENTA",
+                gaugeScore: 30,
+                techSell: 12, techNeutral: 6, techBuy: 4,
+                earnings: {
+                    quarterly: { labels: ['Q4 25', 'Q1 26', 'Q2 26', 'Q3 26'], real: [0.08, -0.05, -0.02, 0.01], est: [0.06, -0.07, -0.04, -0.01] },
+                    annual: { labels: ['2023', '2024', '2025', '2026 (E)'], real: [-0.85, -0.50, -0.20, 0.05], est: [-0.90, -0.55, -0.25, 0.00] }
+                },
+                financials: {
+                    labels: ['2023', '2024', '2025', '2026 (E)'],
+                    revenue: [4.60, 5.10, 5.80, 6.40],
+                    netIncome: [-1.30, -0.75, -0.30, 0.08]
+                },
+                news: [
+                    { title: "Snap busca monetizar sus nuevas gafas de realidad aumentada para frenar caídas.", time: "Hace 5 horas" }
+                ]
+            },
+            "NFLX": {
+                name: "Netflix Inc.",
+                exchange: "NASDAQ",
+                sector: "Entretenimiento • Streaming",
+                price: "$712.30",
+                change: "+$12.50 (+1.79%)",
+                isNegative: false,
+                vol: "3.40M",
+                avgVol: "3.80M",
+                marketCap: "305B USD",
+                pe: "41.20",
+                nextEarnings: "19 Oct 2026",
+                divYield: "0.00%",
+                lastDiv: "N/A",
+                eps: "17.28",
+                range52: "$420.00 - $730.00",
+                gaugeStatus: "COMPRA FUERTE",
+                gaugeScore: 82,
+                techSell: 1, techNeutral: 4, techBuy: 17,
+                earnings: {
+                    quarterly: { labels: ['Q4 25', 'Q1 26', 'Q2 26', 'Q3 26'], real: [4.10, 5.28, 4.88, 5.40], est: [3.90, 5.10, 4.70, 5.20] },
+                    annual: { labels: ['2023', '2024', '2025', '2026 (E)'], real: [12.03, 16.50, 19.80, 22.40], est: [11.80, 16.10, 19.20, 21.90] }
+                },
+                financials: {
+                    labels: ['2023', '2024', '2025', '2026 (E)'],
+                    revenue: [33.7, 38.8, 44.2, 50.1],
+                    netIncome: [5.4, 7.1, 8.8, 10.2]
+                },
+                news: [
+                    { title: "Crecimiento continuo de suscriptores con plan de anuncios impulsa a Netflix.", time: "Hace 4 horas" }
+                ]
+            },
+            "MSFT": {
+                name: "Microsoft Corporation",
+                exchange: "NASDAQ",
+                sector: "Software • Computación en la Nube / IA",
+                price: "$428.10",
+                change: "+$1.80 (+0.42%)",
+                isNegative: false,
+                vol: "18.90M",
+                avgVol: "20.50M",
+                marketCap: "3.18T USD",
+                pe: "35.10",
+                nextEarnings: "27 Oct 2026",
+                divYield: "0.75%",
+                lastDiv: "$0.83 USD",
+                eps: "12.20",
+                range52: "$330.00 - $468.00",
+                gaugeStatus: "COMPRA",
+                gaugeScore: 75,
+                techSell: 2, techNeutral: 5, techBuy: 15,
+                earnings: {
+                    quarterly: { labels: ['Q4 25', 'Q1 26', 'Q2 26', 'Q3 26'], real: [2.93, 3.10, 3.30, 3.45], est: [2.82, 3.00, 3.20, 3.35] },
+                    annual: { labels: ['2023', '2024', '2025', '2026 (E)'], real: [11.06, 12.80, 14.20, 15.90], est: [10.80, 12.50, 13.90, 15.50] }
+                },
+                financials: {
+                    labels: ['2023', '2024', '2025', '2026 (E)'],
+                    revenue: [211.9, 245.1, 280.0, 320.0],
+                    netIncome: [72.4, 88.1, 101.0, 115.0]
+                },
+                news: [
+                    { title: "Microsoft Azure registra aceleración histórica impulsada por copilotos de IA.", time: "Hace 6 horas" }
+                ]
+            },
+            "TSLA": {
+                name: "Tesla Inc.",
+                exchange: "NASDAQ",
+                sector: "Automotriz • Vehículos Eléctricos e IA",
+                price: "$218.50",
+                change: "-$8.30 (-3.66%)",
+                isNegative: true,
+                vol: "55.20M",
+                avgVol: "62.00M",
+                marketCap: "695B USD",
+                pe: "61.40",
+                nextEarnings: "22 Oct 2026",
+                divYield: "0.00%",
+                lastDiv: "N/A",
+                eps: "3.55",
+                range52: "$138.00 - $271.00",
+                gaugeStatus: "NEUTRO",
+                gaugeScore: 48,
+                techSell: 8, techNeutral: 8, techBuy: 6,
+                earnings: {
+                    quarterly: { labels: ['Q4 25', 'Q1 26', 'Q2 26', 'Q3 26'], real: [0.71, 0.45, 0.52, 0.60], est: [0.73, 0.50, 0.55, 0.62] },
+                    annual: { labels: ['2023', '2024', '2025', '2026 (E)'], real: [3.12, 2.40, 2.90, 3.55], est: [3.10, 2.50, 3.00, 3.65] }
+                },
+                financials: {
+                    labels: ['2023', '2024', '2025', '2026 (E)'],
+                    revenue: [96.8, 98.2, 112.0, 130.0],
+                    netIncome: [15.0, 7.1, 9.5, 12.2]
+                },
+                news: [
+                    { title: "Tesla enfoca su estrategia en la producción masiva de Robotaxis y energía.", time: "Hace 2 horas" }
+                ]
+            },
+            "AVGO": {
+                name: "Broadcom Inc.",
+                exchange: "NASDAQ",
+                sector: "Semiconductores • Redes e IA",
+                price: "$172.40",
+                change: "+$3.80 (+2.25%)",
+                isNegative: false,
+                vol: "14.10M",
+                avgVol: "15.30M",
+                marketCap: "805B USD",
+                pe: "38.20",
+                nextEarnings: "10 Dec 2026",
+                divYield: "1.25%",
+                lastDiv: "$0.53 USD",
+                eps: "4.50",
+                range52: "$88.00 - $185.00",
+                gaugeStatus: "COMPRA FUERTE",
+                gaugeScore: 84,
+                techSell: 1, techNeutral: 3, techBuy: 18,
+                earnings: {
+                    quarterly: { labels: ['Q4 25', 'Q1 26', 'Q2 26', 'Q3 26'], real: [1.10, 1.15, 1.22, 1.30], est: [1.05, 1.10, 1.18, 1.25] },
+                    annual: { labels: ['2023', '2024', '2025', '2026 (E)'], real: [4.22, 4.80, 5.50, 6.30], est: [4.10, 4.65, 5.30, 6.10] }
+                },
+                financials: {
+                    labels: ['2023', '2024', '2025', '2026 (E)'],
+                    revenue: [35.8, 51.5, 62.0, 74.0],
+                    netIncome: [14.1, 13.2, 18.5, 23.0]
+                },
+                news: [
+                    { title: "Broadcom eleva perspectivas de ingresos por chips personalizados de red IA.", time: "Hace 8 horas" }
+                ]
+            }
+        };
+
+        // CHART INSTANCES
+        let earningsChartInstance = null;
+        let financialsChartInstance = null;
+        let currentPeriod = 'quarterly';
+        let currentTicker = 'META';
+
+        // INITIALIZE ON LOAD
+        window.onload = function() {
+            renderDashboard(currentTicker);
+        };
+
+        // RENDER DASHBOARD FOR SELECTED TICKER
+        function renderDashboard(ticker) {
+            currentTicker = ticker;
+            const data = tickerData[ticker];
+            if (!data) return;
+
+            // Header info
+            document.getElementById('assetName').innerText = data.name;
+            document.getElementById('assetExchange').innerText = data.exchange;
+            document.getElementById('assetSector').innerText = data.sector;
+            document.getElementById('assetPrice').innerText = data.price;
+            
+            const changeEl = document.getElementById('assetChange');
+            if (data.isNegative) {
+                changeEl.className = "text-sm font-semibold font-mono-val text-cyber-red flex items-center justify-end gap-1";
+                changeEl.innerHTML = `<i class="fa-solid fa-caret-down"></i> ${data.change}`;
+            } else {
+                changeEl.className = "text-sm font-semibold font-mono-val text-cyber-green flex items-center justify-end gap-1";
+                changeEl.innerHTML = `<i class="fa-solid fa-caret-up"></i> ${data.change}`;
+            }
+
+            // Stats strip
+            document.getElementById('assetVol').innerText = data.vol;
+            document.getElementById('assetAvgVol').innerText = data.avgVol;
+            document.getElementById('assetMarketCap').innerText = data.marketCap;
+            document.getElementById('assetPE').innerText = data.pe;
+
+            // Key Stats Card
+            document.getElementById('statEarningsDate').innerText = data.nextEarnings;
+            document.getElementById('statDividendYield').innerText = data.divYield;
+            document.getElementById('statLastDividend').innerText = data.lastDiv;
+            document.getElementById('statEPS').innerText = data.eps;
+            document.getElementById('statRange52').innerText = data.range52;
+
+            // Gauge Meter
+            updateGauge(data.gaugeScore, data.gaugeStatus, data.techSell, data.techNeutral, data.techBuy);
+
+            // News Container
+            const newsContainer = document.getElementById('newsContainer');
+            newsContainer.innerHTML = '';
+            data.news.forEach(item => {
+                const card = document.createElement('div');
+                card.className = "bg-cyber-bg p-3 rounded-lg border border-cyber-border hover:border-cyber-green/40 transition cursor-pointer";
+                card.innerHTML = `
+                    <h4 class="text-xs font-semibold text-cyber-bright hover:text-cyber-green transition leading-snug">${item.title}</h4>
+                    <span class="text-[10px] text-cyber-text block mt-1.5 font-mono">${item.time} • Fuente Financiera</span>
+                `;
+                newsContainer.appendChild(card);
+            });
+
+            // Update Charts
+            renderEarningsChart(data.earnings[currentPeriod]);
+            renderFinancialsChart(data.financials);
+        }
+
+        // TICKER CHANGE TRIGGER
+        function changeTicker(ticker) {
+            renderDashboard(ticker);
+        }
+
+        // UPDATE GAUGE METER
+        function updateGauge(score, statusText, sell, neutral, buy) {
+            const path = document.getElementById('gaugePath');
+            const statusEl = document.getElementById('gaugeValueText');
+            
+            // Total arc circumference is ~126
+            const offset = 126 - (126 * (score / 100));
+            path.style.strokeDashoffset = offset;
+
+            if (score >= 70) {
+                path.style.stroke = "#00ff88"; // Cyber green
+                statusEl.className = "absolute bottom-0 left-1/2 transform -translate-x-1/2 font-bold font-mono-val text-xs text-cyber-green";
+            } else if (score >= 45) {
+                path.style.stroke = "#00e5ff"; // Cyber cyan
+                statusEl.className = "absolute bottom-0 left-1/2 transform -translate-x-1/2 font-bold font-mono-val text-xs text-cyber-cyan";
+            } else {
+                path.style.stroke = "#ff3366"; // Cyber red
+                statusEl.className = "absolute bottom-0 left-1/2 transform -translate-x-1/2 font-bold font-mono-val text-xs text-cyber-red";
+            }
+
+            statusEl.innerText = statusText;
+
+            document.getElementById('techSellCount').innerText = sell;
+            document.getElementById('techNeutralCount').innerText = neutral;
+            document.getElementById('techBuyCount').innerText = buy;
+        }
+
+        // TOGGLE EARNINGS PERIOD (QUARTERLY / ANNUAL)
+        function toggleEarningsPeriod(period) {
+            currentPeriod = period;
+            const btnQ = document.getElementById('btn-quarterly');
+            const btnA = document.getElementById('btn-annual');
+
+            if (period === 'quarterly') {
+                btnQ.className = "px-2.5 py-1 rounded-md text-cyber-bright bg-cyber-border font-medium";
+                btnA.className = "px-2.5 py-1 rounded-md text-cyber-text hover:text-cyber-bright transition";
+            } else {
+                btnA.className = "px-2.5 py-1 rounded-md text-cyber-bright bg-cyber-border font-medium";
+                btnQ.className = "px-2.5 py-1 rounded-md text-cyber-text hover:text-cyber-bright transition";
+            }
+
+            const data = tickerData[currentTicker];
+            if (data) {
+                renderEarningsChart(data.earnings[period]);
+            }
+        }
+
+        // RENDER EARNINGS CHART (CHART.JS)
+        function renderEarningsChart(earningsData) {
+            const ctx = document.getElementById('earningsChart').getContext('2d');
+
+            if (earningsChartInstance) {
+                earningsChartInstance.destroy();
+            }
+
+            earningsChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: earningsData.labels,
+                    datasets: [
+                        {
+                            label: 'Resultado Real',
+                            data: earningsData.real,
+                            backgroundColor: '#00ff88',
+                            borderRadius: 6,
+                            barPercentage: 0.4
+                        },
+                        {
+                            label: 'Estimación',
+                            data: earningsData.est,
+                            backgroundColor: '#00e5ff',
+                            borderRadius: 6,
+                            barPercentage: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#0d1322',
+                            borderColor: '#1a243a',
+                            borderWidth: 1,
+                            titleColor: '#f8fafc',
+                            bodyColor: '#94a3b8',
+                            bodyFont: { family: 'JetBrains Mono' }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(26, 36, 58, 0.5)' },
+                            ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 11 } }
+                        },
+                        y: {
+                            grid: { color: 'rgba(26, 36, 58, 0.5)' },
+                            ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 11 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // RENDER FINANCIALS CHART
+        function renderFinancialsChart(financialsData) {
+            const ctx = document.getElementById('financialsChart').getContext('2d');
+
+            if (financialsChartInstance) {
+                financialsChartInstance.destroy();
+            }
+
+            financialsChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: financialsData.labels,
+                    datasets: [
+                        {
+                            label: 'Ingresos Totales ($B)',
+                            data: financialsData.revenue,
+                            borderColor: '#00e5ff',
+                            backgroundColor: 'rgba(0, 229, 255, 0.1)',
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#00e5ff'
+                        },
+                        {
+                            label: 'Beneficio Neto ($B)',
+                            data: financialsData.netIncome,
+                            borderColor: '#00ff88',
+                            backgroundColor: 'rgba(0, 255, 136, 0.1)',
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#00ff88'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#94a3b8', font: { family: 'Inter', size: 12 } }
+                        },
+                        tooltip: {
+                            backgroundColor: '#0d1322',
+                            borderColor: '#1a243a',
+                            borderWidth: 1,
+                            titleColor: '#f8fafc',
+                            bodyColor: '#94a3b8',
+                            bodyFont: { family: 'JetBrains Mono' }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(26, 36, 58, 0.5)' },
+                            ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 11 } }
+                        },
+                        y: {
+                            grid: { color: 'rgba(26, 36, 58, 0.5)' },
+                            ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 11 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // TAB NAVIGATION FILTERING
+        function switchTab(tab) {
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(btn => {
+                btn.className = "tab-btn px-3 py-1.5 rounded-lg text-xs font-medium border border-transparent text-cyber-text hover:text-cyber-bright hover:bg-cyber-hover flex items-center gap-1.5 whitespace-nowrap transition";
+            });
+
+            const activeBtn = document.getElementById(`tab-${tab}`);
+            if (activeBtn) {
+                activeBtn.className = "tab-btn px-3 py-1.5 rounded-lg text-xs font-medium border border-cyber-green bg-cyber-green/10 text-cyber-green flex items-center gap-1.5 whitespace-nowrap transition";
+            }
+
+            const secFinancials = document.getElementById('section-financials');
+            const secTechnical = document.getElementById('section-technical');
+            const secEarnings = document.getElementById('section-earnings');
+            const secNews = document.getElementById('section-news');
+
+            // Reset visibility
+            secFinancials.style.display = "flex";
+            secTechnical.style.display = "flex";
+            secEarnings.style.display = "flex";
+            secNews.style.display = "flex";
+
+            if (tab === 'technical') {
+                secFinancials.style.display = "none";
+                secEarnings.style.display = "none";
+            } else if (tab === 'earnings') {
+                secFinancials.style.display = "none";
+            } else if (tab === 'news') {
+                secFinancials.style.display = "none";
+                secTechnical.style.display = "none";
+            }
+        }
+
+        // TOGGLE ALL SECTIONS VISIBILITY
+        let allVisible = true;
+        function toggleAllSections() {
+            allVisible = !allVisible;
+            const sections = ['section-financials', 'section-technical', 'section-earnings', 'section-news', 'section-keystats'];
+            sections.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = allVisible ? "flex" : "none";
+            });
+        }
+    </script>
+</body>
+</html>

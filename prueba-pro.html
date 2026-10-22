@@ -1,0 +1,1585 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>HagenAcademy · Terminal de Análisis v6</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#030509;--surface:rgba(10,15,26,.88);--field:#060a12;--line:#1e293b;
+  --neon:#00ff66;--neon-glow:rgba(0,255,102,.35);
+  --alert:#ff0055;--alert-glow:rgba(255,0,85,.35);
+  --cyan:#00f3ff;--text:#e2e8f0;--sub:#8294ad;--warn:#ffb020;
+  --f-disp:'Orbitron',system-ui,sans-serif;
+  --f-mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:var(--bg);color:var(--text);font-family:var(--f-mono);font-size:14px;
+  padding-block:20px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  background-image:
+    radial-gradient(circle at 15% 15%,rgba(0,255,102,.05) 0%,transparent 40%),
+    radial-gradient(circle at 85% 85%,rgba(255,0,85,.05) 0%,transparent 40%),
+    linear-gradient(rgba(255,255,255,.02) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px);
+  background-size:100% 100%,100% 100%,30px 30px,30px 30px;
+  min-height:100vh;
+}
+.shell{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+
+/* Header */
+header{text-align:center;display:flex;flex-direction:column;gap:6px}
+h1{
+  margin:0;font-family:var(--f-disp);font-weight:900;
+  font-size:clamp(1.4rem,5vw,2.2rem);letter-spacing:2px;
+  text-transform:uppercase;color:#fff;
+  text-shadow:0 0 10px var(--neon),0 0 22px var(--neon-glow);
+  display:flex;align-items:center;justify-content:center;gap:12px;
+}
+h1 svg{width:1em;height:1em;filter:drop-shadow(0 0 6px var(--neon-glow))}
+.tag{color:var(--cyan);font-size:.8rem;letter-spacing:3px;text-transform:uppercase;text-shadow:0 0 5px rgba(0,243,255,.5)}
+
+/* Módulos */
+.mod{
+  background:var(--surface);
+  border:1px solid rgba(0,255,102,.3);
+  border-radius:8px;padding:18px;min-width:0;
+  display:flex;flex-direction:column;gap:14px;
+  backdrop-filter:blur(10px);
+  box-shadow:0 0 15px rgba(0,0,0,.7),inset 0 0 15px rgba(0,255,102,.05);
+  position:relative;
+  clip-path:polygon(0 0,calc(100% - 15px) 0,100% 15px,100% 100%,15px 100%,0 calc(100% - 15px));
+}
+.mod::before{
+  content:'';position:absolute;top:0;left:0;
+  width:5px;height:100%;background:var(--neon);
+  box-shadow:0 0 8px var(--neon);
+}
+.mod h2{
+  margin:0;font-family:var(--f-disp);font-weight:700;font-size:1rem;
+  color:var(--neon);text-transform:uppercase;
+  text-shadow:0 0 8px var(--neon-glow);letter-spacing:1px;
+  display:flex;align-items:center;gap:10px;
+}
+.mod h2 svg{width:1.1em;height:1.1em}
+
+/* Grid / campos */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
+.fld{display:flex;flex-direction:column;gap:7px;min-width:0}
+label,.lbl{font-size:.72rem;color:var(--cyan);text-transform:uppercase;letter-spacing:1px}
+input,select{
+  background:var(--field);border:1px solid rgba(0,255,102,.4);
+  color:#fff;padding:10px 12px;border-radius:4px;
+  font-family:var(--f-mono);font-size:.95rem;min-width:0;width:100%;
+  transition:border-color .2s,box-shadow .2s;
+}
+input:focus,select:focus{outline:none;border-color:var(--neon);box-shadow:0 0 10px var(--neon-glow)}
+
+/* Botones */
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.btn{
+  background:rgba(0,255,102,.08);border:1px solid var(--neon);
+  color:var(--neon);padding:9px 13px;
+  font-family:var(--f-disp);font-size:.72rem;font-weight:700;
+  text-transform:uppercase;border-radius:4px;cursor:pointer;
+  transition:all .2s;box-shadow:0 0 5px var(--neon-glow);
+  display:inline-flex;align-items:center;gap:6px;
+}
+.btn:hover{background:var(--neon);color:#000;box-shadow:0 0 15px var(--neon)}
+.btn.on{background:var(--neon);color:#000}
+.btn.danger{border-color:var(--alert);color:var(--alert);background:rgba(255,0,85,.08);box-shadow:0 0 5px var(--alert-glow)}
+.btn.danger:hover{background:var(--alert);color:#fff;box-shadow:0 0 15px var(--alert)}
+.sp{margin-left:auto}
+
+/* Filas de activos */
+.row{display:grid;grid-template-columns:1fr 110px 44px;gap:10px;align-items:center}
+.row .btn{height:42px;padding:0;justify-content:center}
+
+/* Medidor */
+.meter{padding:10px 14px;background:#020408;border:1px solid var(--line);border-radius:4px}
+.track{height:8px;background:#0f172a;border-radius:4px;overflow:hidden;margin-bottom:8px}
+.fill{height:100%;width:0;background:var(--neon);box-shadow:0 0 10px var(--neon);transition:width .25s}
+.minfo{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:.8rem}
+.ok{color:var(--neon)} .err{color:var(--alert)} .pos{color:var(--neon)} .neg{color:var(--alert)}
+
+/* Tarjetas métricas */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
+.card{background:var(--field);border:1px solid rgba(0,243,255,.2);border-radius:6px;padding:14px;min-width:0;position:relative;overflow:hidden}
+.card .k{font-size:.68rem;color:var(--sub);text-transform:uppercase;letter-spacing:1px}
+.card .v{font-family:var(--f-disp);font-weight:700;font-size:1.45rem;margin-top:6px;font-variant-numeric:tabular-nums}
+.card .s{font-size:.72rem;color:var(--sub);margin-top:4px}
+.card .v.pos{text-shadow:0 0 10px var(--neon-glow)}
+.card .v.neg{text-shadow:0 0 10px var(--alert-glow)}
+
+/* Widget Estilo Google Finance / Tarjeta Interactiva */
+.fin-card {
+  background: var(--field);
+  border: 1px solid rgba(0,243,255,.3);
+  border-radius: 6px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.fin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.fin-title { font-family: var(--f-disp); font-size: 1.3rem; color: #fff; display: flex; align-items: center; gap: 10px; }
+.fin-sub { font-size: 0.78rem; color: var(--sub); }
+.fin-price-box { text-align: right; }
+.fin-price { font-family: var(--f-disp); font-size: 1.6rem; font-weight: 700; color: #fff; }
+.fin-change { font-size: 0.9rem; font-weight: 600; }
+.fin-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding-block: 12px;
+}
+.stat-item { display: flex; flex-direction: column; gap: 3px; }
+.stat-label { font-size: 0.7rem; color: var(--sub); text-transform: uppercase; }
+.stat-val { font-size: 0.9rem; font-weight: 600; color: #fff; }
+
+/* Gráfico */
+.chartbox{position:relative;height:320px;width:100%}
+
+/* Tablas */
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.82rem;font-variant-numeric:tabular-nums}
+th{
+  font-family:var(--f-disp);font-weight:500;color:var(--cyan);
+  padding:10px 8px;border-bottom:1px solid rgba(0,243,255,.3);
+  text-transform:uppercase;letter-spacing:1px;font-size:.7rem;
+  text-align:right;white-space:nowrap;
+}
+td{padding:10px 8px;border-bottom:1px solid rgba(255,255,255,.06);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th.sort{cursor:pointer} th.sort:hover{color:#fff}
+tr:hover td{background:rgba(0,255,102,.04)}
+.clickable-ticker { cursor: pointer; text-decoration: underline; color: var(--cyan); font-weight: 800; }
+.clickable-ticker:hover { color: var(--neon); }
+
+.note{font-size:.78rem;color:var(--sub);line-height:1.55;max-width:75ch}
+.note b{color:var(--text)}
+.msg{padding:12px 14px;border:1px solid var(--alert);border-radius:4px;color:var(--alert);background:rgba(255,0,85,.07);font-size:.85rem}
+.chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chip{display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--sub);cursor:pointer}
+.chip input{width:auto;accent-color:var(--neon)}
+.sw{width:10px;height:10px;border-radius:2px;display:inline-block}
+.three{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+#boot{text-align:center;padding:60px 20px;font-family:var(--f-disp);color:var(--neon);letter-spacing:2px}
+.spinner{display:inline-block;width:34px;height:34px;margin-bottom:12px;border:3px solid rgba(0,255,102,.3);border-top-color:var(--neon);border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<div id="boot"><div class="spinner"></div><div>CARGANDO TERMINAL V6...</div></div>
+
+<div class="shell" id="app" hidden>
+<header>
+  <h1>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg>
+    HagenAcademy
+  </h1>
+  <div class="tag">Terminal de Análisis // v6 Widget Financiero Dinámico</div>
+</header>
+
+<!-- MÓDULO 1: PARÁMETROS -->
+<section class="mod">
+  <h2>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+    1. Parámetros de inversión
+  </h2>
+  <div class="grid">
+    <div class="fld"><label for="cap">Capital inicial (USD)</label><input type="number" id="cap" value="1000" min="1" step="100" inputmode="decimal"></div>
+    <div class="fld"><label for="din">Fecha de entrada</label><select id="din"></select></div>
+    <div class="fld"><label for="dout">Fecha de salida</label><select id="dout"></select></div>
+    <div class="fld"><label for="bmk">Benchmark</label>
+      <select id="bmk">
+        <option value="VOO">VOO (S&amp;P 500)</option>
+        <option value="QQQ">QQQ (Nasdaq 100)</option>
+        <option value="VXUS">VXUS (Mundo ex-EE. UU.)</option>
+        <option value="NONE">Ninguno</option>
+      </select>
+    </div>
+  </div>
+</section>
+
+<!-- MÓDULO 2: ACTIVOS Y PESOS -->
+<section class="mod">
+  <h2>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+    2. Activos y pesos
+  </h2>
+  <div class="bar">
+    <span class="lbl">Modo</span>
+    <button class="btn on" id="m-port" type="button">Portafolio (%)</button>
+    <button class="btn" id="m-par" type="button">Activos en paralelo</button>
+  </div>
+  <div class="bar">
+    <span class="lbl">Plantillas</span>
+    <button class="btn" data-p="7030" type="button">Núcleo 70/30</button>
+    <button class="btn" data-p="etf" type="button">ETF 50/30/20</button>
+    <button class="btn" data-p="tech4" type="button">Tech 4×25</button>
+    <button class="btn" data-p="voo" type="button">Solo VOO</button>
+    <button class="btn sp" id="add" type="button">+ Añadir activo</button>
+  </div>
+  <div id="rows" style="display:flex;flex-direction:column;gap:10px"></div>
+  <div class="meter" id="meter">
+    <div class="track"><div class="fill" id="mbar"></div></div>
+    <div class="minfo"><span id="mtxt" class="ok"></span><span id="mval"></span></div>
+  </div>
+</section>
+
+<!-- WIDGET MODERNO ESTILO GOOGLE FINANCE -->
+<section class="mod">
+  <h2>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    Inspección de Activo // <span id="widget-ticker-name" style="color:var(--cyan);">META</span>
+  </h2>
+  <div class="fin-card">
+    <div class="fin-header">
+      <div>
+        <div class="fin-title" id="w-title">Meta Platforms Inc Class A</div>
+        <div class="fin-sub" id="w-subtitle">NASDAQ · Servicios tecnológicos</div>
+      </div>
+      <div class="fin-price-box">
+        <div class="fin-price" id="w-price">$0.00</div>
+        <div class="fin-change" id="w-change">+0.00 (+0.00%)</div>
+      </div>
+    </div>
+    <div class="fin-stats-grid">
+      <div class="stat-item"><span class="stat-label">Precio inicio período</span><span class="stat-val" id="w-pstart">$0.00</span></div>
+      <div class="stat-item"><span class="stat-label">Máximo en período</span><span class="stat-val" id="w-pmax">$0.00</span></div>
+      <div class="stat-item"><span class="stat-label">Mínimo en período</span><span class="stat-val" id="w-pmin">$0.00</span></div>
+      <div class="stat-item"><span class="stat-label">Volatilidad diaria</span><span class="stat-val" id="w-pvol">0.00%</span></div>
+    </div>
+    <div class="chartbox"><canvas id="widget-cv" role="img"></canvas></div>
+  </div>
+  <p class="note">Haz clic en cualquier ticker resaltado en las tablas de abajo para cargar instantáneamente sus datos y su gráfica aquí.</p>
+</section>
+
+<!-- MÓDULO 3: RESULTADO PORTAFOLIO -->
+<section class="mod" id="res">
+  <h2>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/></svg>
+    3. Resultado global del portafolio
+  </h2>
+  <div id="errbox"></div>
+  <div id="out" style="display:flex;flex-direction:column;gap:14px">
+    <div class="cards">
+      <div class="card"><div class="k">Valor final</div><div class="v" id="v-end">-</div><div class="s" id="s-end"></div></div>
+      <div class="card"><div class="k">Retorno total</div><div class="v" id="v-ret">-</div><div class="s" id="s-ret"></div></div>
+      <div class="card"><div class="k" id="k-bmk">Benchmark</div><div class="v" id="v-bmk">-</div><div class="s" id="s-bmk"></div></div>
+      <div class="card"><div class="k">Peor caída (Max DD)</div><div class="v neg" id="v-dd">-</div><div class="s" id="s-dd"></div></div>
+      <div class="card"><div class="k">Mayor subida</div><div class="v pos" id="v-ru">-</div><div class="s" id="s-ru"></div></div>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="chartbox"><canvas id="cv" role="img"></canvas></div>
+  </div>
+</section>
+
+<!-- MÓDULO 4: DESGLOSE -->
+<section class="mod">
+  <h2>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/></svg>
+    4. Desglose por activo (Haz clic en un ticker)
+  </h2>
+  <div class="scroll"><table><thead><tr><th>Activo</th><th>Peso</th><th>Invertido</th><th>Entrada</th><th>Salida</th><th>Rend.</th><th>Valor final</th><th>Aporte</th></tr></thead><tbody id="tb"></tbody></table></div>
+</section>
+
+<!-- MÓDULO 5: RANKING -->
+<section class="mod">
+  <h2>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+    5. Ranking del período
+  </h2>
+  <div class="scroll"><table><thead><tr><th>Activo</th><th class="sort" data-s="ret">Rend. ▾</th><th class="sort" data-s="dd">Peor caída</th><th class="sort" data-s="ru">Mayor subida</th><th class="sort" data-s="vol">Volatilidad</th><th class="sort" data-s="up">Días + / −</th></tr></thead><tbody id="rk"></tbody></table></div>
+</section>
+
+<!-- MÓDULO 6: HINDSIGHT -->
+<section class="mod">
+  <h2>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"/></svg>
+    6. ¿Y si hubiera vendido y recomprado?
+  </h2>
+  <div class="three">
+    <div class="fld"><label for="x-t">Activo</label><select id="x-t"></select></div>
+    <div class="fld"><label for="x-s">Precio de venta</label><input type="number" id="x-s" step="0.01" inputmode="decimal"></div>
+    <div class="fld"><label for="x-r">Precio de recompra</label><input type="number" id="x-r" step="0.01" inputmode="decimal"></div>
+  </div>
+  <div class="cards"><div class="card"><div class="k">Diferencia frente a mantener</div><div class="v" id="x-v">-</div><div class="s" id="x-s2"></div></div></div>
+</section>
+
+</div>
+
+<script>
+(function(){
+const D={"d":["2026-06-01","2026-06-02","2026-06-03","2026-06-04","2026-06-05","2026-06-08","2026-06-09","2026-06-10","2026-06-11","2026-06-12","2026-06-15","2026-06-16","2026-06-17","2026-06-18","2026-06-22","2026-06-23","2026-06-24","2026-06-25","2026-06-26","2026-06-29","2026-06-30","2026-07-01","2026-07-02","2026-07-06","2026-07-07","2026-07-08","2026-07-09","2026-07-10","2026-07-13","2026-07-14","2026-07-15","2026-07-16","2026-07-17","2026-07-20","2026-07-21","2026-07-22","2026-07-23","2026-07-24","2026-07-27","2026-07-28","2026-07-29","2026-07-30","2026-07-31","2026-08-03","2026-08-04","2026-08-05","2026-08-06","2026-08-07","2026-08-10","2026-08-11","2026-08-12","2026-08-13","2026-08-14","2026-08-17","2026-08-18","2026-08-19","2026-08-20","2026-08-21","2026-08-24","2026-08-25","2026-08-26","2026-08-27","2026-08-28","2026-08-31","2026-09-01","2026-09-02","2026-09-03","2026-09-04","2026-09-08","2026-09-09","2026-09-10","2026-09-11","2026-09-14","2026-09-15","2026-09-16","2026-09-17","2026-09-18","2026-09-21","2026-09-22","2026-09-23","2026-09-24","2026-09-25","2026-09-28","2026-09-29","2026-09-30","2026-10-01","2026-10-02","2026-10-05","2026-10-06","2026-10-07","2026-10-08","2026-10-09","2026-10-12","2026-10-13","2026-10-14","2026-10-15","2026-10-16","2026-10-19","2026-10-20"],"c":{"VOO":[693.49,694.45,689.57,692.26,674.3,675.97,674.0,663.41,674.53,678.23,690.04,685.98,677.69,684.35,682.35,672.65,672.0,672.02,668.54,679.26,685.05,683.7,683.08,688.85,685.32,683.5,688.92,692.08,686.73,689.33,692.02,688.37,681.42,680.46,686.11,685.27,676.87,677.4,677.57,679.21,668.91,680.04,684.89,694.61,707.16,705.79,704.59,708.89,708.83,706.6,708.35,713.12,711.78,708.45,703.59,705.1,699.21,701.91,700.03,702.21,702.39,706.93,705.43,703.08,698.48,701.61,708.9,706.19,702.26,699.07,694.86,700.76,697.51,694.41,691.46,699.23,699.98,710.95,710.95,705.79,705.18,708.97,703.61,702.46,700.86,702.35,707.54,712.32,716.2,714.34,711.28,715.59,715.13,715.2,707.43,709.43,701.61,704.6,706.8],"QQQ":[741.15,744.57,742.62,739.03,703.55,714.54,706.32,692.21,715.59,719.8,742.41,728.3,720.97,739.04,737.18,712.91,709.88,715.63,705.78,723.33,735.63,724.42,711.86,722.07,708.69,710.7,722.53,724.75,711.0,718.94,716.99,705.21,694.61,695.34,708.23,704.62,691.24,683.52,681.41,674.79,661.04,682.84,687.27,699.34,723.1,716.55,713.91,722.28,720.12,717.7,722.95,731.31,730.31,729.11,716.76,715.33,710.19,712.7,705.58,709.98,710.63,720.36,715.68,716.01,706.9,708.5,716.92,718.21,717.61,715.56,707.95,714.14,708.44,703.81,703.99,716.17,720.7,741.47,747.46,741.21,741.1,744.5,736.53,737.93,739.77,742.03,749.58,756.2,759.66,757.73,747.58,751.27,746.04,743.57,728.95,728.0,709.8,718.36,717.63],"VXUS":[85.77,86.41,85.56,85.71,82.51,83.21,83.29,82.07,84.8,85.14,86.43,86.09,85.61,86.61,86.9,84.26,84.19,84.93,84.33,84.78,85.34,84.38,84.69,86.01,84.5,84.29,84.75,85.19,83.63,84.51,84.84,83.91,83.22,82.92,84.3,84.31,83.47,83.25,83.64,83.1,82.24,84.62,84.44,84.87,86.29,86.35,86.16,87.05,86.67,86.76,87.38,87.56,87.54,87.71,86.28,86.81,86.87,87.55,87.04,87.96,87.66,87.77,87.36,87.16,86.55,87.0,87.81,88.25,87.92,87.25,86.12,86.98,85.88,85.54,85.26,86.34,85.88,87.15,87.49,85.92,85.59,86.35,85.75,85.52,84.96,84.46,85.43,85.85,85.8,84.79,84.1,84.82,84.44,84.54,83.58,83.84,83.43,83.29,83.74],"META":[599.44,596.61,621.91,626.49,591.98,584.39,583.59,570.0,567.46,566.01,593.01,599.74,567.13,576.76,563.41,561.76,557.23,542.44,549.82,562.16,562.85,612.43,582.44,599.82,615.09,602.64,630.98,668.68,656.21,660.52,680.77,664.02,645.5,645.34,643.3,626.68,605.62,594.72,593.4,592.94,585.15,538.6,556.27,589.77,587.48,588.31,589.43,591.63,594.45,598.65,578.39,594.5,589.38,568.52,543.24,545.6,545.4,549.47,558.58,569.6,575.69,570.65,577.56,571.89,578.08,592.38,610.2,616.28,613.0,653.17,643.87,647.52,665.08,669.71,672.78,681.77,665.23,741.25,736.6,744.1,777.59,751.66,715.62,738.79,725.18,725.93,728.08,741.9,738.88,721.31,720.89,718.67,742.96,762.5,737.54,736.72,709.33,705.44,694.25],"AAPL":[306.05,314.93,309.99,310.96,307.08,301.28,290.3,291.33,295.38,290.88,296.16,298.98,295.69,297.75,296.75,294.05,292.83,274.91,283.54,281.5,289.11,294.13,308.36,312.39,310.39,313.12,315.95,315.05,317.04,314.59,327.22,332.97,333.45,326.31,327.46,325.61,321.38,332.73,336.62,339.79,337.9,333.14,308.64,303.16,309.11,310.73,312.14,313.06,308.26,304.91,302.25,305.26,305.93,305.59,310.03,316.83,311.3,309.35,310.34,309.9,313.45,314.58,319.7,316.85,325.13,324.96,328.21,319.97,316.22,315.34,326.57,332.27,333.08,331.34,332.41,337.0,336.13,338.98,339.75,337.02,335.92,341.07,338.4,329.4,333.02,330.32,333.69,332.89,333.63,336.67,340.42,336.64,340.97,341.27,342.96,342.0,343.46,342.94,339.5],"NVDA":[223.85,222.31,214.26,218.42,204.87,208.41,207.96,200.2,204.64,204.96,212.21,207.18,204.42,210.45,208.42,199.82,198.78,195.52,192.31,194.75,199.87,197.36,194.61,195.33,196.71,203.89,202.55,210.72,203.3,211.56,212.26,207.17,202.58,203.05,207.06,211.82,208.53,206.61,196.29,196.79,189.8,194.82,200.53,206.41,211.7,218.97,218.75,223.71,217.31,217.26,223.84,225.05,224.91,224.76,219.49,217.32,216.61,214.48,208.25,212.81,209.43,227.73,217.31,220.53,217.2,224.16,228.19,230.1,225.48,223.42,218.36,218.29,210.96,212.17,213.9,219.34,222.27,227.38,228.87,225.51,224.58,225.07,228.86,227.21,228.38,230.86,233.95,238.9,239.24,237.47,230.48,229.28,226.32,228.52,221.3,217.23,214.13,217.09,216.47],"PLTR":[160.65,152.17,142.2,141.7,135.53,136.47,132.07,130.21,131.08,127.99,134.71,133.25,130.63,128.47,119.5,116.7,113.5,107.27,112.93,115.7,116.67,125.73,129.3,132.54,134.37,132.22,129.04,126.79,130.04,133.72,133.76,134.44,132.38,134.85,132.66,124.57,123.37,122.92,131.53,123.53,123.0,122.26,123.06,125.65,162.66,158.43,155.92,172.01,175.23,174.94,171.04,179.01,174.04,172.55,171.54,175.19,173.96,179.94,175.89,172.73,177.5,185.93,186.29,186.38,179.92,169.46,182.53,174.33,170.3,169.53,165.86,167.23,173.31,172.56,174.34,176.24,177.64,183.09,184.99,191.79,192.59,189.67,187.48,186.97,187.05,190.04,188.75,189.4,192.07,194.12,198.78,209.05,209.0,208.67,200.97,200.5,186.03,194.15,192.6],"SNAP":[5.86,5.76,5.73,6.07,5.76,5.65,5.59,5.38,5.33,5.26,5.71,5.16,4.74,4.66,4.63,4.46,4.53,4.34,4.41,4.42,4.44,4.75,4.84,4.75,4.65,4.63,4.7,4.68,4.66,4.68,4.76,4.69,4.53,4.56,4.56,4.47,4.41,4.35,4.52,4.77,4.73,4.69,4.69,5.04,5.79,5.33,5.22,5.33,5.35,5.51,5.2,5.3,5.41,5.18,5.11,5.24,5.21,5.24,5.53,5.92,5.42,5.33,5.43,5.55,5.35,5.59,5.7,5.47,5.43,5.31,5.52,5.68,5.84,5.83,5.72,5.65,5.53,5.7,5.62,5.29,5.43,5.42,5.22,5.34,5.4,5.65,5.58,5.61,5.78,5.81,5.86,6.23,6.53,6.49,6.1,6.44,6.13,6.27,6.38],"NFLX":[85.85,83.33,81.52,81.56,82.18,82.64,81.41,82.0,81.27,80.34,81.67,78.72,76.96,77.38,72.88,72.82,71.84,70.9,73.81,73.78,71.4,74.19,77.65,76.02,76.18,75.59,75.47,73.37,73.83,73.53,73.68,74.35,68.95,67.6,68.67,68.53,68.89,70.09,70.4,72.39,73.63,73.17,71.71,73.33,73.57,74.2,73.69,74.14,76.29,74.79,74.21,78.24,78.16,76.02,77.77,80.22,80.14,79.59,80.01,82.23,81.46,79.84,81.72,81.05,80.81,82.73,82.67,78.25,76.77,76.03,76.01,77.4,80.32,77.9,76.41,75.31,71.79,73.36,72.16,71.36,71.72,71.15,69.23,70.3,69.58,67.85,67.06,67.5,68.69,69.7,71.57,70.3,70.61,70.46,70.57,72.61,70.53,69.85,68.69],"MSFT":[459.65,440.48,426.54,427.25,415.89,410.97,402.65,396.61,389.61,390.01,399.01,393.09,378.2,378.69,366.65,373.24,364.77,352.17,372.27,367.88,372.32,383.56,389.76,386.01,388.11,382.62,383.64,384.38,390.26,384.21,394.89,400.35,393.08,401.53,397.0,389.61,380.86,380.98,388.37,392.61,389.81,450.25,463.85,486.73,491.88,486.54,498.92,499.05,505.11,502.86,491.5,495.95,494.47,479.45,480.73,483.4,481.15,483.24,487.31,491.71,496.37,505.06,513.53,507.29,501.02,496.82,510.12,499.7,493.95,491.65,492.44,495.63,505.41,497.12,490.3,497.75,493.78,501.61,498.0,500.59,497.93,516.17,509.22,508.96,512.9,512.8,517.53,525.18,529.3,529.76,522.61,535.07,541.15,543.45,533.69,539.44,529.05,533.52,531.87],"TSLA":[415.88,423.74,423.7,418.45,391.0,408.95,396.68,381.59,399.15,406.43,411.15,404.66,396.38,400.49,405.05,381.61,375.53,375.12,379.71,411.84,420.6,425.3,393.45,419.77,402.9,394.06,406.55,407.76,394.76,396.18,394.46,391.06,380.84,369.57,378.93,374.01,319.69,313.03,309.22,307.44,298.32,308.85,311.21,322.08,327.35,321.55,319.53,328.58,330.88,332.81,327.51,339.96,342.27,339.3,336.87,351.12,345.13,362.86,348.95,350.25,345.82,354.81,348.75,367.95,356.09,357.01,376.37,354.08,368.16,367.81,363.56,365.44,358.97,356.58,358.08,366.2,364.27,375.3,378.9,380.12,377.94,372.11,357.45,352.84,354.81,354.11,370.59,378.73,380.68,377.81,375.0,382.7,378.03,375.23,367.16,362.44,354.72,368.06,373.71],"AVGO":[458.41,479.94,477.6,417.49,384.42,395.25,390.83,370.84,384.26,380.77,392.6,375.43,391.57,409.95,391.42,379.46,381.38,378.22,364.36,371.77,377.06,368.67,359.79,373.22,370.11,387.98,400.38,399.24,383.35,388.4,393.56,373.77,370.16,377.47,385.8,396.09,391.76,381.23,382.52,380.22,369.65,387.14,388.57,391.52,417.4,417.52,419.81,426.98,421.63,415.32,415.29,417.06,392.28,391.72,379.31,361.82,363.37,367.78,358.11,356.09,354.94,370.86,368.12,369.67,369.01,366.57,356.51,357.25,367.89,363.72,360.17,361.33,344.09,338.65,338.89,346.67,356.96,362.66,364.54,354.99,350.36,352.81,349.57,355.1,351.19,343.64,355.14,362.51,375.81,376.51,360.14,361.54,354.73,357.31,346.25,344.33,328.75,334.59,334.37]}};
+const T=Object.keys(D.c),DT=D.d,N=DT.length;
+const PAL=['#00ff66','#00f3ff','#ffb020','#ff0055','#a78bfa','#f472b6','#60a5fa','#34d399','#fb923c','#e879f9','#facc15','#94a3b8'];
+const col=t=>PAL[T.indexOf(t)%PAL.length];
+const $=id=>document.getElementById(id);
+const usd=n=>(n<0?'-':'')+'$'+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const pct=(n,s)=>(s&&n>0?'+':'')+n.toFixed(2)+'%';
+const cls=n=>n>=0?'pos':'neg';
+let mode='port',rows=[{t:'VOO',w:35},{t:'QQQ',w:21},{t:'VXUS',w:14},{t:'META',w:7.5},{t:'AAPL',w:7.5},{t:'NVDA',w:7.5},{t:'PLTR',w:7.5}];
+let chart=null,widgetChart=null,hidden={},sortKey='ret';
+const PRE={'7030':[['VOO',35],['QQQ',21],['VXUS',14],['META',7.5],['AAPL',7.5],['NVDA',7.5],['PLTR',7.5]],etf:[['VOO',50],['QQQ',30],['VXUS',20]],tech4:[['META',25],['AAPL',25],['NVDA',25],['PLTR',25]],voo:[['VOO',100]]};
+
+const NAMES={
+  VOO: "Vanguard S&P 500 ETF", QQQ: "Invesco QQQ Trust", VXUS: "Vanguard Total International Stock ETF",
+  META: "Meta Platforms Inc Class A", AAPL: "Apple Inc", NVDA: "NVIDIA Corporation",
+  PLTR: "Palantir Technologies Inc", SNAP: "Snap Inc", NFLX: "Netflix Inc",
+  MSFT: "Microsoft Corporation", TSLA: "Tesla Inc", AVGO: "Broadcom Inc"
+};
+
+function updateWidget(sym){
+  $('widget-ticker-name').textContent = sym;
+  $('w-title').textContent = NAMES[sym] || sym;
+  $('w-subtitle').textContent = sym + " · Mercado de valores";
+  const a=+$('din').value, b=+$('dout').value;
+  const p=D.c[sym];
+  const lastPrice = p[b], startPrice = p[a];
+  const diff = lastPrice - startPrice;
+  const pcts = (diff / startPrice) * 100;
+  
+  $('w-price').textContent = usd(lastPrice);
+  const chgEl = $('w-change');
+  chgEl.textContent = (diff >= 0 ? '+' : '') + usd(diff) + ' (' + (pcts >= 0 ? '+' : '') + pcts.toFixed(2) + '%)';
+  chgEl.className = 'fin-change ' + cls(diff);
+  
+  $('w-pstart').textContent = usd(startPrice);
+  
+  let maxP = p[a], minP = p[a];
+  let rs = [];
+  for(let i=a; i<=b; i++){
+    if(p[i]>maxP) maxP=p[i];
+    if(p[i]<minP) minP=p[i];
+    if(i>a) rs.push(p[i]/p[i-1]-1);
+  }
+  $('w-pmax').textContent = usd(maxP);
+  $('w-pmin').textContent = usd(minP);
+  const m=rs.reduce((x,y)=>x+y,0)/(rs.length||1);
+  const vr=rs.reduce((x,y)=>x+(y-m)*(y-m),0)/(rs.length||1);
+  $('w-pvol').textContent = (Math.sqrt(vr)*100).toFixed(2)+'%';
+  
+  // Gráfico individual del widget
+  const labels = DT.slice(a, b+1);
+  const dataSub = p.slice(a, b+1);
+  const cfg = {
+    type: 'line',
+    data: { labels, datasets: [{ label: sym, data: dataSub, borderColor: '#00f3ff', backgroundColor: 'rgba(0,243,255,.07)', borderWidth: 2, pointRadius: 0, fill: true, tension: 0.15 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false, animation: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => sym + ': ' + usd(c.parsed.y) } } },
+      scales: { x: { ticks: { color: '#8294ad', maxTicksLimit: 6 }, grid: { color: 'rgba(255,255,255,.04)' } }, y: { ticks: { color: '#8294ad', callback: v => '$'+v.toFixed(0) }, grid: { color: 'rgba(255,255,255,.06)' } } }
+    }
+  };
+  if(widgetChart) widgetChart.destroy();
+  widgetChart = new Chart($('widget-cv'), cfg);
+}
+
+function initDates(){
+  [$('din'),$('dout')].forEach((s,k)=>{DT.forEach((d,i)=>{const o=document.createElement('option');o.value=i;o.textContent=d;s.appendChild(o)});s.value=k?N-1:0});
+}
+function drawRows(){
+  const box=$('rows');box.innerHTML='';
+  rows.forEach((r,i)=>{
+    const d=document.createElement('div');d.className='row';
+    const s=document.createElement('select');
+    T.forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;if(t===r.t)o.selected=true;s.appendChild(o)});
+    s.onchange=e=>{rows[i].t=e.target.value;run()};
+    const w=document.createElement('input');w.type='number';w.min=0;w.max=100;w.step=0.5;w.value=r.w;w.inputMode='decimal';
+    w.oninput=e=>{rows[i].w=parseFloat(e.target.value)||0;run()};
+    if(mode==='par'){w.disabled=true;w.style.opacity=.35}
+    const b=document.createElement('button');b.type='button';b.className='btn danger';b.textContent='×';
+    b.onclick=()=>{rows.splice(i,1);drawRows();run()};
+    d.append(s,w,b);box.appendChild(d);
+  });
+}
+function setMode(m){mode=m;$('m-port').classList.toggle('on',m==='port');$('m-par').classList.toggle('on',m==='par');drawRows();run()}
+function stats(t,a,b){
+  const p=D.c[t];let peak=p[a],dd=0,up=0,dn=0,rs=[],low=p[a],ru=0;
+  for(let i=a;i<=b;i++){if(p[i]>peak)peak=p[i];dd=Math.min(dd,p[i]/peak-1);if(p[i]<low)low=p[i];ru=Math.max(ru,p[i]/low-1);if(i>a){const r=p[i]/p[i-1]-1;rs.push(r);r>=0?up++:dn++}}
+  const m=rs.reduce((x,y)=>x+y,0)/(rs.length||1),vr=rs.reduce((x,y)=>x+(y-m)*(y-m),0)/(rs.length||1);
+  return{ret:(p[b]/p[a]-1)*100,dd:dd*100,ru:ru*100,vol:Math.sqrt(vr)*100,up,dn};
+}
+function run(){
+  const a=+$('din').value,b=+$('dout').value,cap=parseFloat($('cap').value);
+  const sum=rows.reduce((x,r)=>x+r.w,0),n=rows.length;
+  const mb=$('mbar'),mt=$('mtxt'),mv=$('mval');
+  let errs=[];
+  if(mode==='port'){
+    const ok=Math.abs(sum-100)<0.01;mb.style.width=Math.min(sum,100)+'%';
+    mb.style.background=ok?'var(--neon)':(sum>100?'var(--alert)':'var(--warn)');
+    mt.className=ok?'ok':'err';mt.textContent=ok?'Pesos válidos.':(sum>100?'Suman más de 100%.':'Faltan '+(100-sum).toFixed(1)+'% por asignar.');
+    mv.textContent=sum.toFixed(1)+'% / 100%';
+    if(!ok)errs.push('Los pesos deben sumar 100% para simular.');
+  }else{
+    mb.style.width='100%';mb.style.background='var(--cyan)';mt.className='ok';mt.textContent=n+' activo(s) en paralelo.';
+    mv.textContent='Total: '+usd((cap||0)*n);
+  }
+  if(!(cap>0))errs.push('Capital mayor que 0.');
+  if(!n)errs.push('Añade un activo.');
+  if(a>=b)errs.push('Fecha de salida posterior a entrada.');
+  $('errbox').innerHTML='';
+  if(errs.length){const m=document.createElement('div');m.className='msg';m.textContent=errs[0];$('errbox').appendChild(m);$('out').hidden=true;$('tb').innerHTML='';rank(a,b);return}
+  $('out').hidden=false;
+  const inv=rows.map(r=>mode==='port'?cap*r.w/100:cap),tot=inv.reduce((x,y)=>x+y,0);
+  const sh=rows.map((r,i)=>inv[i]/D.c[r.t][a]);
+  const ser=[],per=rows.map(()=>[]);
+  for(let i=a;i<=b;i++){let v=0;rows.forEach((r,k)=>{const x=sh[k]*D.c[r.t][i];per[k].push(x);v+=x});ser.push(v)}
+  let peak=ser[0],dd=0,ddi=0;ser.forEach((v,i)=>{if(v>peak)peak=v;const d=v/peak-1;if(d<dd){dd=d;ddi=i}});
+  let low=ser[0],lowi=0,ru=0,ru0=0,ru1=0;ser.forEach((v,i)=>{if(v<low){low=v;lowi=i}const u=v/low-1;if(u>ru){ru=u;ru0=lowi;ru1=i}});
+  const end=ser[ser.length-1],gain=end-tot,ret=gain/tot*100;
+  $('v-end').textContent=usd(end);$('s-end').textContent='Invertido '+usd(tot);
+  $('v-ret').textContent=pct(ret,1);$('v-ret').className='v '+cls(ret);$('s-ret').textContent=(gain>=0?'Ganancia ':'Pérdida ')+usd(Math.abs(gain));
+  $('v-dd').textContent=pct(dd*100);$('s-dd').textContent='al '+DT[a+ddi];
+  $('v-ru').textContent=pct(ru*100,1);$('s-ru').textContent=ru>0?'del '+DT[a+ru0]+' al '+DT[a+ru1]:'sin subida';
+  const bm=$('bmk').value;let bser=null;
+  if(bm==='NONE'){$('k-bmk').textContent='Benchmark';$('v-bmk').textContent='-';$('v-bmk').className='v';$('s-bmk').textContent='Sin benchmark'}
+  else{const bp=D.c[bm];bser=[];for(let i=a;i<=b;i++)bser.push(tot*bp[i]/bp[a]);const br=(bp[b]/bp[a]-1)*100;
+    $('k-bmk').textContent='Benchmark '+bm;$('v-bmk').textContent=pct(br,1);$('v-bmk').className='v '+cls(br);
+    const diff=ret-br;$('s-bmk').textContent=(diff>=0?'Tu mezcla +':'Tu mezcla ')+diff.toFixed(2)+' pts vs '+bm}
+  
+  // Tabla desglose
+  const tb=$('tb');tb.innerHTML='';
+  rows.forEach((r,k)=>{
+    const p=D.c[r.t],val=per[k][per[k].length-1],rr=(p[b]/p[a]-1)*100,tr=document.createElement('tr');
+    const cells=[r.t,(inv[k]/tot*100).toFixed(1)+'%',usd(inv[k]),p[a].toFixed(2),p[b].toFixed(2),pct(rr,1),usd(val),usd(val-inv[k])];
+    cells.forEach((c,j)=>{
+      const td=document.createElement('td');
+      if(j===0){
+        const span=document.createElement('span');span.className='clickable-ticker';span.textContent=c;
+        span.onclick=()=>updateWidget(c);td.appendChild(span);
+      }else{td.textContent=c;if(j===5||j===7)td.className=cls(j===5?rr:val-inv[k])}
+      tr.appendChild(td);
+    });
+    tb.appendChild(tr);
+  });
+  
+  // Chips
+  const ch=$('chips');ch.innerHTML='';
+  rows.forEach(r=>{const l=document.createElement('label');l.className='chip';const c=document.createElement('input');c.type='checkbox';c.checked=!!hidden['show_'+r.t];
+    c.onchange=()=>{hidden['show_'+r.t]=c.checked;run()};const sw=document.createElement('span');sw.className='sw';sw.style.background=col(r.t);l.append(c,sw,document.createTextNode(r.t));ch.appendChild(l)});
+  
+  // Gráfico general
+  const labels=DT.slice(a,b+1),ds=[{label:'Portafolio',data:ser,borderColor:'#00ff66',backgroundColor:'rgba(0,255,102,.08)',borderWidth:2.5,pointRadius:0,fill:true,tension:.15}];
+  if(bser)ds.push({label:bm,data:bser,borderColor:'#00f3ff',borderWidth:1.8,borderDash:[6,4],pointRadius:0,tension:.15});
+  rows.forEach((r,k)=>{if(hidden['show_'+r.t])ds.push({label:r.t,data:per[k],borderColor:col(r.t),borderWidth:1.2,pointRadius:0,tension:.15})});
+  const cfg={type:'line',data:{labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},
+    plugins:{legend:{labels:{color:'#e2e8f0',font:{family:'JetBrains Mono'}}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+usd(c.parsed.y)}}},
+    scales:{x:{ticks:{color:'#8294ad',maxTicksLimit:8},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#8294ad',callback:v=>'$'+v.toLocaleString('en-US')},grid:{color:'rgba(255,255,255,.06)'}}}}};
+  if(chart)chart.destroy();chart=new Chart($('cv'),cfg);
+  
+  rank(a,b);
+  updateWidget($('widget-ticker-name').textContent);
+}
+
+function rank(a,b){
+  const L=T.map(t=>({t,...stats(t,a,b)}));
+  if(a>=b){$('rk').innerHTML='';return}
+  L.sort((x,y)=>sortKey==='dd'?y.dd-x.dd:sortKey==='ru'?y.ru-x.ru:sortKey==='vol'?x.vol-y.vol:sortKey==='up'?(y.up/(y.up+y.dn))-(x.up/(x.up+x.dn)):y.ret-x.ret);
+  const tb=$('rk');tb.innerHTML='';
+  L.forEach(o=>{const tr=document.createElement('tr');
+    [o.t,pct(o.ret,1),pct(o.dd),pct(o.ru,1),o.vol.toFixed(2)+'%',o.up+' / '+o.dn].forEach((c,j)=>{
+      const td=document.createElement('td');
+      if(j===0){
+        const span=document.createElement('span');span.className='clickable-ticker';span.textContent=c;
+        span.onclick=()=>updateWidget(c);td.appendChild(span);
+      }else{td.textContent=c;if(j===1)td.className=cls(o.ret);if(j===2)td.className='neg';if(j===3)td.className='pos'}
+      tr.appendChild(td);
+    });
+    tb.appendChild(tr);
+  });
+}
+
+function init(){
+  initDates();drawRows();
+  ['cap','din','dout','bmk'].forEach(id=>{$(id).addEventListener('input',run);$(id).addEventListener('change',run)});
+  $('m-port').onclick=()=>setMode('port');$('m-par').onclick=()=>setMode('par');
+  $('add').onclick=()=>{const used=new Set(rows.map(r=>r.t));const nt=T.find(t=>!used.has(t));if(!nt)return;rows.push({t:nt,w:0});drawRows();run()};
+  document.querySelectorAll('[data-p]').forEach(bt=>bt.onclick=()=>{rows=PRE[bt.dataset.p].map(x=>({t:x[0],w:x[1]}));setMode('port')});
+  document.querySelectorAll('th.sort').forEach(th=>th.onclick=()=>{sortKey=th.dataset.s;run()});
+  
+  setTimeout(()=>{
+    $('boot').style.display='none';
+    $('app').hidden=false;
+    run();
+    updateWidget('META');
+  },300);
+}
+init();
+})();
+</script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HagenAcademy - Terminal de Análisis Financiero</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN for Professional Financial Visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter & JetBrains Mono -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            bg: '#070a12',
+                            card: '#0d1322',
+                            border: '#1a243a',
+                            hover: '#151e33',
+                            green: '#00ff88',
+                            red: '#ff3366',
+                            cyan: '#00e5ff',
+                            text: '#94a3b8',
+                            bright: '#f8fafc'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #070a12;
+            color: #94a3b8;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+        .font-mono-val {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #070a12;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1a243a;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00ff88;
+        }
+        /* Gauge Arc styling */
+        .gauge-container {
+            position: relative;
+            width: 160px;
+            height: 80px;
+        }
+        .gauge-bg {
+            fill: none;
+            stroke: #1a243a;
+            stroke-width: 12;
+        }
+        .gauge-fill {
+            fill: none;
+            stroke-width: 12;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.8s ease, stroke 0.5s ease;
+        }
+        .neon-glow-green {
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.15);
+        }
+        .neon-border-green:focus {
+            border-color: #00ff88;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+        }
+    </style>
+</head>
+<body class="p-2 md:p-4 min-h-screen flex flex-col justify-between">
+
+    <!-- MAIN CONTAINER -->
+    <div class="max-w-7xl mx-auto w-full flex flex-col gap-4">
+        
+        <!-- HEADER BAR & BRANDING -->
+        <header class="bg-cyber-card border border-cyber-border rounded-xl p-4 flex flex-wrap justify-between items-center gap-4 neon-glow-green">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-cyber-green/10 border border-cyber-green/40 flex items-center justify-center text-cyber-green font-bold text-xl">
+                    <i class="fa-solid font-mono"><span class="text-cyber-cyan">H</span>A</i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-cyber-bright tracking-wide flex items-center gap-2">
+                        HAGENACADEMY <span class="text-xs px-2 py-0.5 rounded bg-cyber-green/20 text-cyber-green border border-cyber-green/30 uppercase tracking-widest font-mono">Terminal v2026</span>
+                    </h1>
+                    <p class="text-xs text-cyber-text">Dashboard Financiero e Inspección de Activos estilo TradingView</p>
+                </div>
+            </div>
+
+            <!-- QUICK STATS SUMMARY HEADER -->
+            <div class="flex items-center gap-6 text-xs border-l border-cyber-border pl-6 hidden lg:flex">
+                <div>
+                    <span class="block text-cyber-text">ESTADO DEL MERCADO</span>
+                    <span class="text-cyber-green font-semibold flex items-center gap-1">
+                        <span class="w-2 h-2 rounded-full bg-cyber-green animate-pulse"></span> Mercado Abierto
+                    </span>
+                </div>
+                <div>
+                    <span class="block text-cyber-text">ACTIVOS CUBIERTOS</span>
+                    <span class="text-cyber-bright font-mono-val font-semibold">12 Tickers HQ</span>
+                </div>
+                <div>
+                    <span class="block text-cyber-text">FECHA SISTEMA</span>
+                    <span class="text-cyber-bright font-mono-val">OCT 2026</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- TRADINGVIEW STYLE NAVIGATION TOOLBAR -->
+        <nav class="bg-cyber-card border border-cyber-border rounded-xl p-2 flex flex-wrap items-center justify-between gap-2 text-sm">
+            
+            <!-- TICKER SELECTOR DROPDOWN -->
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+                <span class="text-xs text-cyber-text font-mono uppercase pl-2">Ticker:</span>
+                <div class="relative w-full sm:w-56">
+                    <select id="tickerSelector" onchange="changeTicker(this.value)" class="w-full bg-cyber-bg border border-cyber-border rounded-lg px-3 py-2 text-cyber-bright font-mono-val font-bold text-base focus:outline-none neon-border-green cursor-pointer">
+                        <option value="VOO">VOO - Vanguard S&P 500 ETF</option>
+                        <option value="QQQ">QQQ - Invesco QQQ Trust</option>
+                        <option value="VXUS">VXUS - Vanguard Total Intl</option>
+                        <option value="META" selected>META - Meta Platforms Class A</option>
+                        <option value="AAPL">AAPL - Apple Inc.</option>
+                        <option value="NVDA">NVDA - NVIDIA Corporation</option>
+                        <option value="PLTR">PLTR - Palantir Technologies</option>
+                        <option value="SNAP">SNAP - Snap Inc.</option>
+                        <option value="NFLX">NFLX - Netflix Inc.</option>
+                        <option value="MSFT">MSFT - Microsoft Corp.</option>
+                        <option value="TSLA">TSLA - Tesla Inc.</option>
+                        <option value="AVGO">AVGO - Broadcom Inc.</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- CATEGORY BUTTONS (TradingView Toolset) -->
+            <div class="flex items-center gap-1 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
+                <button onclick="switchTab('financials')" id="tab-financials" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-medium border border-cyber-green bg-cyber-green/10 text-cyber-green flex items-center gap-1.5 whitespace-nowrap transition">
+                    <i class="fa-solid fa-chart-pie">i</i> Info Financiera
+                </button>
+                <button onclick="switchTab('technical')" id="tab-technical" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-medium border border-transparent text-cyber-text hover:text-cyber-bright hover:bg-cyber-hover flex items-center gap-1.5 whitespace-nowrap transition">
+                    <i class="fa-solid fa-gauge-high"></i> Datos Técnicos
+                </button>
+                <button onclick="switchTab('earnings')" id="tab-earnings" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-medium border border-transparent text-cyber-text hover:text-cyber-bright hover:bg-cyber-hover flex items-center gap-1.5 whitespace-nowrap transition">
+                    <i class="fa-solid fa-square-poll-vertical"></i> Resultados Q1-Q4
+                </button>
+                <button onclick="switchTab('news')" id="tab-news" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-medium border border-transparent text-cyber-text hover:text-cyber-bright hover:bg-cyber-hover flex items-center gap-1.5 whitespace-nowrap transition">
+                    <i class="fa-regular fa-newspaper"></i> Noticias
+                </button>
+            </div>
+
+            <!-- CUSTOMIZE VIEW BUTTON -->
+            <div class="hidden md:flex items-center gap-2">
+                <button onclick="toggleAllSections()" class="px-3 py-1.5 bg-cyber-bg hover:bg-cyber-hover border border-cyber-border text-cyber-text hover:text-cyber-bright rounded-lg text-xs flex items-center gap-1.5 transition">
+                    <i class="fa-solid fa-sliders"></i> Personalizar Vista
+                </button>
+            </div>
+        </nav>
+
+        <!-- DASHBOARD GRID CONTENT -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            
+            <!-- LEFT / TOP MAIN TICKER CARD & SUMMARY (8 COLS) -->
+            <div class="lg:col-span-8 flex flex-col gap-4">
+                
+                <!-- TICKER HEADER CARD -->
+                <div class="bg-cyber-card border border-cyber-border rounded-xl p-5 relative overflow-hidden">
+                    <div class="flex flex-wrap justify-between items-start gap-4">
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <h2 id="assetName" class="text-2xl font-bold text-cyber-bright tracking-tight">Meta Platforms Inc Class A</h2>
+                                <span id="assetExchange" class="text-xs px-2 py-0.5 rounded bg-cyber-border text-cyber-text font-mono">NASDAQ</span>
+                            </div>
+                            <p id="assetSector" class="text-xs text-cyber-text">Servicios tecnológicos • Software y servicios de Internet</p>
+                        </div>
+                        <div class="text-right">
+                            <div id="assetPrice" class="text-3xl font-bold font-mono-val text-cyber-bright">$647.26</div>
+                            <div id="assetChange" class="text-sm font-semibold font-mono-val text-cyber-red flex items-center justify-end gap-1">
+                                <i class="fa-solid fa-caret-down"></i> -$50.20 (-7.21%)
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- VOLUME AND MARKET STATS STRIP -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-4 border-t border-cyber-border/60 text-xs">
+                        <div>
+                            <span class="text-cyber-text block">Volumen Actual</span>
+                            <span id="assetVol" class="text-cyber-bright font-mono-val font-semibold">27.73M</span>
+                        </div>
+                        <div>
+                            <span class="text-cyber-text block">Volumen Prom. (30d)</span>
+                            <span id="assetAvgVol" class="text-cyber-bright font-mono-val font-semibold">21.01M</span>
+                        </div>
+                        <div>
+                            <span class="text-cyber-text block">Cap. de Mercado</span>
+                            <span id="assetMarketCap" class="text-cyber-bright font-mono-val font-semibold">1.65T USD</span>
+                        </div>
+                        <div>
+                            <span class="text-cyber-text block">Ratio P/E (TTM)</span>
+                            <span id="assetPE" class="text-cyber-bright font-mono-val font-semibold">23.79</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- EARNINGS / BENEFICIOS (Q1-Q4) SECTION -->
+                <div id="section-earnings" class="bg-cyber-card border border-cyber-border rounded-xl p-5 flex flex-col gap-4">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h3 class="text-base font-bold text-cyber-bright flex items-center gap-2">
+                                <i class="fa-solid fa-chart-column text-cyber-green"></i> Beneficios Trimestrales (Q1 - Q4)
+                            </h3>
+                            <p class="text-xs text-cyber-text">Comparativa de Resultado Real vs Estimación de Analistas</p>
+                        </div>
+                        <!-- Period toggle -->
+                        <div class="flex bg-cyber-bg p-1 rounded-lg border border-cyber-border text-xs">
+                            <button id="btn-quarterly" onclick="toggleEarningsPeriod('quarterly')" class="px-2.5 py-1 rounded-md text-cyber-bright bg-cyber-border font-medium">Trimestral</button>
+                            <button id="btn-annual" onclick="toggleEarningsPeriod('annual')" class="px-2.5 py-1 rounded-md text-cyber-text hover:text-cyber-bright transition">Anual</button>
+                        </div>
+                    </div>
+
+                    <!-- Chart Container -->
+                    <div class="relative w-full h-64">
+                        <canvas id="earningsChart"></canvas>
+                    </div>
+
+                    <div class="flex items-center justify-center gap-6 text-xs border-t border-cyber-border/40 pt-3">
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-cyber-green inline-block"></span>
+                            <span class="text-cyber-text">Resultado Real ($/Acción)</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-cyber-cyan inline-block"></span>
+                            <span class="text-cyber-text">Estimación ($/Acción)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FINANCIALS & VALUATION RATIOS CHART SECTION -->
+                <div id="section-financials" class="bg-cyber-card border border-cyber-border rounded-xl p-5 flex flex-col gap-4">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h3 class="text-base font-bold text-cyber-bright flex items-center gap-2">
+                                <i class="fa-solid fa-vault text-cyber-cyan"></i> Cuenta de Resultados e Ingresos vs Beneficio Neto
+                            </h3>
+                            <p class="text-xs text-cyber-text">Evolución de Ingresos y Márgenes Operativos</p>
+                        </div>
+                    </div>
+
+                    <!-- Revenue & Income Chart -->
+                    <div class="relative w-full h-64">
+                        <canvas id="financialsChart"></canvas>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- RIGHT PANEL - TECHNICAL ANALYSIS, NEWS & KEY STATS (4 COLS) -->
+            <div class="lg:col-span-4 flex flex-col gap-4">
+                
+                <!-- KEY STATS CARD -->
+                <div id="section-keystats" class="bg-cyber-card border border-cyber-border rounded-xl p-5 flex flex-col gap-3">
+                    <h3 class="text-sm font-bold text-cyber-bright uppercase tracking-wider border-b border-cyber-border pb-2 flex items-center justify-between">
+                        <span>Estadísticas Clave</span>
+                        <i class="fa-solid fa-list-check text-cyber-green text-xs"></i>
+                    </h3>
+
+                    <div class="space-y-2.5 text-xs">
+                        <div class="flex justify-between items-center">
+                            <span class="text-cyber-text">Próximo Informe Resultados</span>
+                            <span id="statEarningsDate" class="text-cyber-bright font-mono-val font-medium">21 Oct 2026</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-cyber-text">Rendimiento Dividendo</span>
+                            <span id="statDividendYield" class="text-cyber-bright font-mono-val font-medium">0.30%</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-cyber-text">Último Pago Dividendo</span>
+                            <span id="statLastDividend" class="text-cyber-bright font-mono-val font-medium">$0.525 USD</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-cyber-text">BPA TTM (EPS)</span>
+                            <span id="statEPS" class="text-cyber-bright font-mono-val font-medium">23.79</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-cyber-text">Rango 52 Semanas</span>
+                            <span id="statRange52" class="text-cyber-bright font-mono-val font-medium">$450.10 - $710.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TECHNICAL ANALYSIS GAUGE METER -->
+                <div id="section-technical" class="bg-cyber-card border border-cyber-border rounded-xl p-5 flex flex-col items-center text-center gap-3">
+                    <h3 class="text-sm font-bold text-cyber-bright uppercase tracking-wider w-full text-left border-b border-cyber-border pb-2 flex items-center justify-between">
+                        <span>Análisis Técnico</span>
+                        <i class="fa-solid fa-compass text-cyber-cyan text-xs"></i>
+                    </h3>
+
+                    <!-- SVG Gauge -->
+                    <div class="gauge-container mt-2">
+                        <svg class="w-full h-full" viewBox="0 0 100 50">
+                            <!-- Background Arc -->
+                            <path class="gauge-bg" d="M 10 50 A 40 40 0 0 1 90 50" />
+                            <!-- Colored Filled Arc -->
+                            <path id="gaugePath" class="gauge-fill" d="M 10 50 A 40 40 0 0 1 90 50" stroke="#00ff88" stroke-dasharray="126" stroke-dashoffset="30" />
+                        </svg>
+                        <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 font-bold font-mono-val text-sm" id="gaugeValueText">
+                            COMPRA FUERTE
+                        </div>
+                    </div>
+
+                    <p class="text-xs text-cyber-text px-2">Basado en osciladores técnicos y medias móviles en tiempo real.</p>
+                    
+                    <div class="grid grid-cols-3 w-full text-center text-xs border-t border-cyber-border/40 pt-3 mt-1">
+                        <div>
+                            <span class="block text-cyber-red font-bold">Venta</span>
+                            <span id="techSellCount" class="text-cyber-bright font-mono-val">2</span>
+                        </div>
+                        <div>
+                            <span class="block text-cyber-text font-bold">Neutro</span>
+                            <span id="techNeutralCount" class="text-cyber-bright font-mono-val">5</span>
+                        </div>
+                        <div>
+                            <span class="block text-cyber-green font-bold">Compra</span>
+                            <span id="techBuyCount" class="text-cyber-bright font-mono-val">15</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RECENT NEWS SIDEBAR -->
+                <div id="section-news" class="bg-cyber-card border border-cyber-border rounded-xl p-5 flex flex-col gap-3">
+                    <h3 class="text-sm font-bold text-cyber-bright uppercase tracking-wider border-b border-cyber-border pb-2 flex items-center justify-between">
+                        <span>Noticias Recientes</span>
+                        <i class="fa-regular fa-newspaper text-cyber-green text-xs"></i>
+                    </h3>
+
+                    <div id="newsContainer" class="space-y-3">
+                        <!-- Dynamic news inserted via JS -->
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- FOOTER BRANDING -->
+        <footer class="bg-cyber-card border border-cyber-border rounded-xl p-3 text-center text-xs text-cyber-text">
+             HagenAcademy Terminal de Análisis &copy; 2026. Todos los derechos reservados.
+        </footer>
+
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // DATASET V2026 FOR 12 ASSETS
+        const tickerData = {
+            "META": {
+                name: "Meta Platforms Inc Class A",
+                exchange: "NASDAQ",
+                sector: "Servicios tecnológicos • Software y Servicios",
+                price: "$647.26",
+                change: "-$50.20 (-7.21%)",
+                isNegative: true,
+                vol: "27.73M",
+                avgVol: "21.01M",
+                marketCap: "1.65T USD",
+                pe: "23.79",
+                nextEarnings: "21 Oct 2026",
+                divYield: "0.30%",
+                lastDiv: "$0.525 USD",
+                eps: "23.79",
+                range52: "$450.10 - $710.00",
+                gaugeStatus: "COMPRA FUERTE",
+                gaugeScore: 80, // 0 to 100
+                techSell: 2, techNeutral: 4, techBuy: 16,
+                earnings: {
+                    quarterly: { labels: ['Q4 25', 'Q1 26', 'Q2 26', 'Q3 26'], real: [5.33, 4.71, 5.16, 5.80], est: [4.90, 4.32, 4.78, 5.25] },
+                    annual: { labels: ['2023', '2024', '2025', '2026 (E)'], real: [14.87, 18.20, 21.40, 23.79], est: [14.10, 17.80, 20.50, 22.90] }
+                },
+                financials: {
+                    labels: ['2023', '2024', '2025', '2026 (E)'],
+                    revenue: [134.9, 156.2, 178.4, 201.1],
+                    netIncome: [39.1, 48.5, 56.2, 64.8]
+                },
+                news: [
+                    { title: "Las acciones de Meta corrigen tras el fuerte gasto anunciado en infraestructura de IA.", time: "Hace 1 hora" },
+                    { title: "Meta expande sus centros de datos cuánticos en Norteamérica para 2027.", time: "Hace 5 horas" },
+                    { title: "Analistas reiteran recomendación sobre Meta tras aumento de ingresos publicitarios.", time: "Hace 12 horas" }
+                ]
+            },
+            "VOO": {
+                name: "Vanguard S&P 500 ETF",
+                exchange: "NYSE Arca",
+                sector: "Fondos Cotizados • Renta Variable EE.UU.",
+                price: "$512.40",
+                change: "+$3.15 (+0.62%)",
+                isNegative: false,
+                vol: "4.12M",
+                avgVol: "3.85M",
+                marketCap: "1.12T USD",
+                pe: "26.40",
+                nextEarnings: "N/A (ETF)",
+                divYield: "1.32%",
+                lastDiv: "$1.85 USD",
+                eps: "N/A",
+                range52: "$410.00 - $525.00",
+                gaugeStatus: "COMPRA",
+                gaugeScore: 70,
+                techSell: 1, techNeutral: 6, techBuy: 13,
+                earnings: {
+                    quarterly: { labels: ['Q4 25', 'Q1 26', 'Q2 26', 'Q3 26'], real: [2.10, 2.15, 2.22, 2.30], est: [2.05, 2.10, 2.18, 2.25] },
+                    annual: { labels: ['2023', '2024', '2025', '2026 (E)'], real: [7.80, 8.40, 9.10, 9.80], est: [7.60, 8.20, 8.90, 9.50] }
+                },
+                financials: {
+                    labels: ['2023', '2024', '2025', '2026 (E)'],
+                    revenue: [410.0, 480.0, 520.0, 590.0],
+                    netIncome: [85.0, 98.0, 110.0, 125.0]
+                },
+                news: [
+                    { title: "El S&P 500 marca nuevo máximo impulsado por el sector tecnológico.", time: "Hace 2 horas" },
+                    { title: "Entradas récord de capital hacia el ETF VOO en el último trimestre.", time: "Hace 8 horas" }
+                ]
+            },
+            "QQQ": {
+                name: "Invesco QQQ Trust Series 1",
+                exchange: "NASDAQ",
+                sector: "Fondos Cotizados • Tecnológicas Gran Cap",
+                price: "$485.90",
+                change: "+$5.40 (+1.12%)",
+                isNegative: false,
+                vol: "32.10M",
+                avgVol: "30.50M",
+                marketCap: "285B USD",
+                pe: "31.20",
+                nextEarnings: "N/A (ETF)",
+                divYield: "0.58%",
+                lastDiv: "$0.68 USD",
+                eps: "N/A",
+                range52: "$360.00 - $500.00",
+                gaugeStatus: "COMPRA FUERTE",
+                gaugeScore: 85,
+                techSell: 1, techNeutral: 3, techBuy: 18,
+                earnings: {
+                    quarterly: { labels: ['Q4 25', 'Q1 26', 'Q2 26', 'Q3 26'], real: [3.10, 3.25, 3.40, 3.60], est: [3.00, 3.15, 3.30, 3.45] },
+                    annual: { labels: ['2023', '2024', '2025', '2026 (E)'], real: [11.20, 12.80, 14.50, 16.10], est: [10.90, 12.40, 14.00, 15.60] }
+                },
+                financials: {
+                    labels: ['2023', '2024', '2025', '2026 (E)'],
+                    revenue: [210.0, 250.0, 290.0, 340.0],
+                    netIncome: [52.0, 64.0, 75.0, 88.0]
+                },
+                news: [
+                    { title: "Invesco QQQ encabeza las ganancias semanales del sector de alta tecnología.", time: "Hace 3 horas" },
+                    { title: "Perspectivas positivas sobre el índice Nasdaq-100 para el cierre de año.", time: "Hace 6 horas" }
+                ]
+            },
+            "VXUS": {
+                name: "Vanguard Total International Stock ETF",
+                exchange: "NASDAQ",
+                sector: "Fondos Cotizados • Renta Variable Global Ex-US",
+                price: "$62.15",
+                change: "-$0.35 (-0.56%)",
+                isNegative: true,
+                vol: "2.85M",
+                avgVol: "3.10M",
+                marketCap: "72B USD",
+                pe: "14.80",
+                nextEarnings: "N/A (ETF)",
+                divYield: "3.10%",
+                lastDiv: "$0.58 USD",
+                eps: "N/A",
+                range52: "$52.00 - $65.50",
+                gaugeStatus: "NEUTRO",
+                gaugeScore: 50,
+                techSell: 5, techNeutral: 10, techBuy: 7,
+                earnings: {
+                    quarterly: { labels: ['Q4 25', 'Q1 26', 'Q2 26', 'Q3 26'], real: [0.45, 0.48, 0.50, 0.52], est: [0.44, 0.47, 0.49, 0.51] },
+                    annual: { labels: ['2023', '2024', '2025', '2026 (E)'], real: [1.80, 1.95, 2.10, 2.25], est: [1.75, 1.90, 2.05, 2.20] }
+                },
+                financials: {
+                    labels: ['2023', '2024', '2025', '2026 (E)'],
+                    revenue: [95.0, 105.0, 115.0, 125.0],
+                    netIncome: [18.0, 21.0, 23.0, 26.0]
+                },
+                news: [
+                    { title: "Mercados internacionales muestran estabilidad ante políticas monetarias en Europa.", time: "Hace 10 horas" }
+                ]
+            },
+            "AAPL": {
+                name: "Apple Inc.",
+                exchange: "NASDAQ",
+                sector: "Tecnología de Consumo • Hardware",
+                price: "$232.80",
+                change: "+$2.10 (+0.91%)",
+                isNegative: false,
+                vol: "48.20M",
+                avgVol: "45.00M",
+                marketCap: "3.52T USD",
+                pe: "33.50",
+                nextEarnings: "30 Oct 2026",
+                divYield: "0.45%",
+                lastDiv: "$0.25 USD",
+                eps: "6.95",
+                range52: "$165.00 - $237.20",
+                gaugeStatus: "COMPRA",
+                gaugeScore: 72,
+                techSell: 2, techNeutral: 5, techBuy: 15,
+                earnings: {
+                    quarterly: { labels: ['Q4 25', 'Q1 26', 'Q2 26', 'Q3 26'], real: [2.18, 1.53, 1.40, 1.64], est: [2.10, 1.50, 1.35, 1.60] },
+                    annual: { labels: ['2023', '2024', '2025', '2026 (E)'], real: [6.13, 6.57, 7.10, 7.80], est: [6.00, 6.45, 7.00, 7.65] }
+                },
+                financials: {
+                    labels: ['2023', '2024', '2025', '2026 (E)'],
+                    revenue: [383.3, 391.0, 412.0, 440.0],
+                    netIncome: [97.0, 100.5, 108.0, 118.0]
+                },
+                news: [
+                    { title: "Apple presenta avances en su integración de inteligencia artificial para dispositivos Pro.", time: "Hace 4 horas" },
+                    { title: "Aumento de ventas de iPhone en mercados emergentes impulsa proyecciones.", time: "Hace 7 horas" }
+                ]
+            },
+            "NVDA": {
+                name: "NVIDIA Corporation",
+                exchange: "NASDAQ",
+                sector: "Semiconductores • Hardware IA",
+                price: "$138.50",
+                change: "+$4.20 (+3.13%)",
+                isNegative: false,
+                vol: "65.40M",
+                avgVol: "60.10M",
+                marketCap: "3.40T USD",
+                pe: "42.10",
+                nextEarnings: "18 Nov 2026",
+                divYield: "0.08%",
+                lastDiv: "$0.01 USD",
+                eps: "3.28",
+                range52: "$40.00 - $140.70",
+                gaugeStatus: "COMPRA FUERTE",
+                gaugeScore: 92,
+                techSell: 0, techNeutral: 2, techBuy: 20,
+                earnings: {
+                    quarterly: { labels: ['Q4 25', 'Q1 26', 'Q2 26', 'Q3 26'], real: [0.52, 0.61, 0.68, 0.75], est: [0.48, 0.58, 0.64, 0.70] },
+                    annual: { labels: ['2023', '2024', '2025', '2026 (E)'], real: [1.19, 2.45, 3.28, 4.10], est: [1.10, 2.30, 3.15, 3.95] }
+                },
+                financials: {
+                    labels: ['2023', '2024', '2025', '2026 (E)'],
+                    revenue: [60.9, 96.3, 125.0, 160.0],
+                    netIncome: [29.7, 53.0, 71.0, 90.0]
+                },
+                news: [
+                    { title: "NVIDIA anuncia la entrega masiva de sus nuevos chips para centros de datos supercomputacionales.", time: "Hace 30 mins" },
+                    { title: "Demanda sin precedentes de aceleradores gráficos consolida el liderazgo de NVIDIA.", time: "Hace 3 horas" }
+                ]
+            },
+            "PLTR": {
+                name: "Palantir Technologies Inc Class A",
+                exchange: "NASDAQ",
+                sector: "Servicios tecnológicos • Software empaquetado",
+                price: "$197.68",
+                change: "-$4.04 (-2.00%)",
+                isNegative: true,
+                vol: "11.39M",
+                avgVol: "23.15M",
+                marketCap: "477.44B USD",
+                pe: "171.00",
+                nextEarnings: "En 11 días",
+                divYield: "0.00%",
+                lastDiv: "N/A",
+                eps: "1.15",
+                range52: "$15.00 - $210.00",
+                gaugeStatus: "COMPRA",
+                gaugeScore: 78,
+                techSell: 2, techNeutral: 4, techBuy: 16,
+                earnings: {
+                    quarterly: { labels: ['Q3 25', 'Q4 25', 'Q1 26', 'Q2 26'], real: [0.10, 0.12, 0.14, 0.16], est: [0.08, 0.10, 0.12, 0.14] },
+                    annual: { labels: ['2023', '2024', '2025', '2026 (E)'], real: [0.25, 0.40, 0.75, 1.15], est: [0.20, 0.35, 0.70, 1.05] }
+                },
+                financials: {
+                    labels: ['2023', '2024', '2025', '2026 (E)'],
+                    revenue: [2.23, 2.80, 3.60, 4.50],
+                    netIncome: [0.21, 0.45, 0.90, 1.35]
+                },
+                news: [
+                    { title: "Palantir amplia la IA soberana con nuevos clientes gubernamentales emblemáticos.", time: "Hace 21 horas" },
+                    { title: "Contrato multimillonario de defensa impulsa la plataforma AIP de Palantir.", time: "Hace 1 día" }
+                ]
+            },
+            "SNAP": {
+                name: "Snap Inc. Class A",
+                exchange: "NYSE",
+                sector: "Redes Sociales • Tecnología",
+                price: "$10.85",
+                change: "-$0.42 (-3.73%)",
+                isNegative: true,
+                vol: "18.50M",
+                avgVol: "22.10M",
+                marketCap: "17.8B USD",
+                pe: "N/A (Pérdida)",
+                nextEarnings: "04 Nov 2026",
+                divYield: "0.00%",
+                lastDiv: "N/A",
+                eps: "-0.38",
+                range52: "$8.50 - $16.20",
+                gaugeStatus: "VENTA",
+                gaugeScore: 30,
+                techSell: 12, techNeutral: 6, techBuy: 4,
+                earnings: {
+                    quarterly: { labels: ['Q4 25', 'Q1 26', 'Q2 26', 'Q3 26'], real: [0.08, -0.05, -0.02, 0.01], est: [0.06, -0.07, -0.04, -0.01] },
+                    annual: { labels: ['2023', '2024', '2025', '2026 (E)'], real: [-0.85, -0.50, -0.20, 0.05], est: [-0.90, -0.55, -0.25, 0.00] }
+                },
+                financials: {
+                    labels: ['2023', '2024', '2025', '2026 (E)'],
+                    revenue: [4.60, 5.10, 5.80, 6.40],
+                    netIncome: [-1.30, -0.75, -0.30, 0.08]
+                },
+                news: [
+                    { title: "Snap busca monetizar sus nuevas gafas de realidad aumentada para frenar caídas.", time: "Hace 5 horas" }
+                ]
+            },
+            "NFLX": {
+                name: "Netflix Inc.",
+                exchange: "NASDAQ",
+                sector: "Entretenimiento • Streaming",
+                price: "$712.30",
+                change: "+$12.50 (+1.79%)",
+                isNegative: false,
+                vol: "3.40M",
+                avgVol: "3.80M",
+                marketCap: "305B USD",
+                pe: "41.20",
+                nextEarnings: "19 Oct 2026",
+                divYield: "0.00%",
+                lastDiv: "N/A",
+                eps: "17.28",
+                range52: "$420.00 - $730.00",
+                gaugeStatus: "COMPRA FUERTE",
+                gaugeScore: 82,
+                techSell: 1, techNeutral: 4, techBuy: 17,
+                earnings: {
+                    quarterly: { labels: ['Q4 25', 'Q1 26', 'Q2 26', 'Q3 26'], real: [4.10, 5.28, 4.88, 5.40], est: [3.90, 5.10, 4.70, 5.20] },
+                    annual: { labels: ['2023', '2024', '2025', '2026 (E)'], real: [12.03, 16.50, 19.80, 22.40], est: [11.80, 16.10, 19.20, 21.90] }
+                },
+                financials: {
+                    labels: ['2023', '2024', '2025', '2026 (E)'],
+                    revenue: [33.7, 38.8, 44.2, 50.1],
+                    netIncome: [5.4, 7.1, 8.8, 10.2]
+                },
+                news: [
+                    { title: "Crecimiento continuo de suscriptores con plan de anuncios impulsa a Netflix.", time: "Hace 4 horas" }
+                ]
+            },
+            "MSFT": {
+                name: "Microsoft Corporation",
+                exchange: "NASDAQ",
+                sector: "Software • Computación en la Nube / IA",
+                price: "$428.10",
+                change: "+$1.80 (+0.42%)",
+                isNegative: false,
+                vol: "18.90M",
+                avgVol: "20.50M",
+                marketCap: "3.18T USD",
+                pe: "35.10",
+                nextEarnings: "27 Oct 2026",
+                divYield: "0.75%",
+                lastDiv: "$0.83 USD",
+                eps: "12.20",
+                range52: "$330.00 - $468.00",
+                gaugeStatus: "COMPRA",
+                gaugeScore: 75,
+                techSell: 2, techNeutral: 5, techBuy: 15,
+                earnings: {
+                    quarterly: { labels: ['Q4 25', 'Q1 26', 'Q2 26', 'Q3 26'], real: [2.93, 3.10, 3.30, 3.45], est: [2.82, 3.00, 3.20, 3.35] },
+                    annual: { labels: ['2023', '2024', '2025', '2026 (E)'], real: [11.06, 12.80, 14.20, 15.90], est: [10.80, 12.50, 13.90, 15.50] }
+                },
+                financials: {
+                    labels: ['2023', '2024', '2025', '2026 (E)'],
+                    revenue: [211.9, 245.1, 280.0, 320.0],
+                    netIncome: [72.4, 88.1, 101.0, 115.0]
+                },
+                news: [
+                    { title: "Microsoft Azure registra aceleración histórica impulsada por copilotos de IA.", time: "Hace 6 horas" }
+                ]
+            },
+            "TSLA": {
+                name: "Tesla Inc.",
+                exchange: "NASDAQ",
+                sector: "Automotriz • Vehículos Eléctricos e IA",
+                price: "$218.50",
+                change: "-$8.30 (-3.66%)",
+                isNegative: true,
+                vol: "55.20M",
+                avgVol: "62.00M",
+                marketCap: "695B USD",
+                pe: "61.40",
+                nextEarnings: "22 Oct 2026",
+                divYield: "0.00%",
+                lastDiv: "N/A",
+                eps: "3.55",
+                range52: "$138.00 - $271.00",
+                gaugeStatus: "NEUTRO",
+                gaugeScore: 48,
+                techSell: 8, techNeutral: 8, techBuy: 6,
+                earnings: {
+                    quarterly: { labels: ['Q4 25', 'Q1 26', 'Q2 26', 'Q3 26'], real: [0.71, 0.45, 0.52, 0.60], est: [0.73, 0.50, 0.55, 0.62] },
+                    annual: { labels: ['2023', '2024', '2025', '2026 (E)'], real: [3.12, 2.40, 2.90, 3.55], est: [3.10, 2.50, 3.00, 3.65] }
+                },
+                financials: {
+                    labels: ['2023', '2024', '2025', '2026 (E)'],
+                    revenue: [96.8, 98.2, 112.0, 130.0],
+                    netIncome: [15.0, 7.1, 9.5, 12.2]
+                },
+                news: [
+                    { title: "Tesla enfoca su estrategia en la producción masiva de Robotaxis y energía.", time: "Hace 2 horas" }
+                ]
+            },
+            "AVGO": {
+                name: "Broadcom Inc.",
+                exchange: "NASDAQ",
+                sector: "Semiconductores • Redes e IA",
+                price: "$172.40",
+                change: "+$3.80 (+2.25%)",
+                isNegative: false,
+                vol: "14.10M",
+                avgVol: "15.30M",
+                marketCap: "805B USD",
+                pe: "38.20",
+                nextEarnings: "10 Dec 2026",
+                divYield: "1.25%",
+                lastDiv: "$0.53 USD",
+                eps: "4.50",
+                range52: "$88.00 - $185.00",
+                gaugeStatus: "COMPRA FUERTE",
+                gaugeScore: 84,
+                techSell: 1, techNeutral: 3, techBuy: 18,
+                earnings: {
+                    quarterly: { labels: ['Q4 25', 'Q1 26', 'Q2 26', 'Q3 26'], real: [1.10, 1.15, 1.22, 1.30], est: [1.05, 1.10, 1.18, 1.25] },
+                    annual: { labels: ['2023', '2024', '2025', '2026 (E)'], real: [4.22, 4.80, 5.50, 6.30], est: [4.10, 4.65, 5.30, 6.10] }
+                },
+                financials: {
+                    labels: ['2023', '2024', '2025', '2026 (E)'],
+                    revenue: [35.8, 51.5, 62.0, 74.0],
+                    netIncome: [14.1, 13.2, 18.5, 23.0]
+                },
+                news: [
+                    { title: "Broadcom eleva perspectivas de ingresos por chips personalizados de red IA.", time: "Hace 8 horas" }
+                ]
+            }
+        };
+
+        // CHART INSTANCES
+        let earningsChartInstance = null;
+        let financialsChartInstance = null;
+        let currentPeriod = 'quarterly';
+        let currentTicker = 'META';
+
+        // INITIALIZE ON LOAD
+        window.onload = function() {
+            renderDashboard(currentTicker);
+        };
+
+        // RENDER DASHBOARD FOR SELECTED TICKER
+        function renderDashboard(ticker) {
+            currentTicker = ticker;
+            const data = tickerData[ticker];
+            if (!data) return;
+
+            // Header info
+            document.getElementById('assetName').innerText = data.name;
+            document.getElementById('assetExchange').innerText = data.exchange;
+            document.getElementById('assetSector').innerText = data.sector;
+            document.getElementById('assetPrice').innerText = data.price;
+            
+            const changeEl = document.getElementById('assetChange');
+            if (data.isNegative) {
+                changeEl.className = "text-sm font-semibold font-mono-val text-cyber-red flex items-center justify-end gap-1";
+                changeEl.innerHTML = `<i class="fa-solid fa-caret-down"></i> ${data.change}`;
+            } else {
+                changeEl.className = "text-sm font-semibold font-mono-val text-cyber-green flex items-center justify-end gap-1";
+                changeEl.innerHTML = `<i class="fa-solid fa-caret-up"></i> ${data.change}`;
+            }
+
+            // Stats strip
+            document.getElementById('assetVol').innerText = data.vol;
+            document.getElementById('assetAvgVol').innerText = data.avgVol;
+            document.getElementById('assetMarketCap').innerText = data.marketCap;
+            document.getElementById('assetPE').innerText = data.pe;
+
+            // Key Stats Card
+            document.getElementById('statEarningsDate').innerText = data.nextEarnings;
+            document.getElementById('statDividendYield').innerText = data.divYield;
+            document.getElementById('statLastDividend').innerText = data.lastDiv;
+            document.getElementById('statEPS').innerText = data.eps;
+            document.getElementById('statRange52').innerText = data.range52;
+
+            // Gauge Meter
+            updateGauge(data.gaugeScore, data.gaugeStatus, data.techSell, data.techNeutral, data.techBuy);
+
+            // News Container
+            const newsContainer = document.getElementById('newsContainer');
+            newsContainer.innerHTML = '';
+            data.news.forEach(item => {
+                const card = document.createElement('div');
+                card.className = "bg-cyber-bg p-3 rounded-lg border border-cyber-border hover:border-cyber-green/40 transition cursor-pointer";
+                card.innerHTML = `
+                    <h4 class="text-xs font-semibold text-cyber-bright hover:text-cyber-green transition leading-snug">${item.title}</h4>
+                    <span class="text-[10px] text-cyber-text block mt-1.5 font-mono">${item.time} • Fuente Financiera</span>
+                `;
+                newsContainer.appendChild(card);
+            });
+
+            // Update Charts
+            renderEarningsChart(data.earnings[currentPeriod]);
+            renderFinancialsChart(data.financials);
+        }
+
+        // TICKER CHANGE TRIGGER
+        function changeTicker(ticker) {
+            renderDashboard(ticker);
+        }
+
+        // UPDATE GAUGE METER
+        function updateGauge(score, statusText, sell, neutral, buy) {
+            const path = document.getElementById('gaugePath');
+            const statusEl = document.getElementById('gaugeValueText');
+            
+            // Total arc circumference is ~126
+            const offset = 126 - (126 * (score / 100));
+            path.style.strokeDashoffset = offset;
+
+            if (score >= 70) {
+                path.style.stroke = "#00ff88"; // Cyber green
+                statusEl.className = "absolute bottom-0 left-1/2 transform -translate-x-1/2 font-bold font-mono-val text-xs text-cyber-green";
+            } else if (score >= 45) {
+                path.style.stroke = "#00e5ff"; // Cyber cyan
+                statusEl.className = "absolute bottom-0 left-1/2 transform -translate-x-1/2 font-bold font-mono-val text-xs text-cyber-cyan";
+            } else {
+                path.style.stroke = "#ff3366"; // Cyber red
+                statusEl.className = "absolute bottom-0 left-1/2 transform -translate-x-1/2 font-bold font-mono-val text-xs text-cyber-red";
+            }
+
+            statusEl.innerText = statusText;
+
+            document.getElementById('techSellCount').innerText = sell;
+            document.getElementById('techNeutralCount').innerText = neutral;
+            document.getElementById('techBuyCount').innerText = buy;
+        }
+
+        // TOGGLE EARNINGS PERIOD (QUARTERLY / ANNUAL)
+        function toggleEarningsPeriod(period) {
+            currentPeriod = period;
+            const btnQ = document.getElementById('btn-quarterly');
+            const btnA = document.getElementById('btn-annual');
+
+            if (period === 'quarterly') {
+                btnQ.className = "px-2.5 py-1 rounded-md text-cyber-bright bg-cyber-border font-medium";
+                btnA.className = "px-2.5 py-1 rounded-md text-cyber-text hover:text-cyber-bright transition";
+            } else {
+                btnA.className = "px-2.5 py-1 rounded-md text-cyber-bright bg-cyber-border font-medium";
+                btnQ.className = "px-2.5 py-1 rounded-md text-cyber-text hover:text-cyber-bright transition";
+            }
+
+            const data = tickerData[currentTicker];
+            if (data) {
+                renderEarningsChart(data.earnings[period]);
+            }
+        }
+
+        // RENDER EARNINGS CHART (CHART.JS)
+        function renderEarningsChart(earningsData) {
+            const ctx = document.getElementById('earningsChart').getContext('2d');
+
+            if (earningsChartInstance) {
+                earningsChartInstance.destroy();
+            }
+
+            earningsChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: earningsData.labels,
+                    datasets: [
+                        {
+                            label: 'Resultado Real',
+                            data: earningsData.real,
+                            backgroundColor: '#00ff88',
+                            borderRadius: 6,
+                            barPercentage: 0.4
+                        },
+                        {
+                            label: 'Estimación',
+                            data: earningsData.est,
+                            backgroundColor: '#00e5ff',
+                            borderRadius: 6,
+                            barPercentage: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#0d1322',
+                            borderColor: '#1a243a',
+                            borderWidth: 1,
+                            titleColor: '#f8fafc',
+                            bodyColor: '#94a3b8',
+                            bodyFont: { family: 'JetBrains Mono' }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(26, 36, 58, 0.5)' },
+                            ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 11 } }
+                        },
+                        y: {
+                            grid: { color: 'rgba(26, 36, 58, 0.5)' },
+                            ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 11 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // RENDER FINANCIALS CHART
+        function renderFinancialsChart(financialsData) {
+            const ctx = document.getElementById('financialsChart').getContext('2d');
+
+            if (financialsChartInstance) {
+                financialsChartInstance.destroy();
+            }
+
+            financialsChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: financialsData.labels,
+                    datasets: [
+                        {
+                            label: 'Ingresos Totales ($B)',
+                            data: financialsData.revenue,
+                            borderColor: '#00e5ff',
+                            backgroundColor: 'rgba(0, 229, 255, 0.1)',
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#00e5ff'
+                        },
+                        {
+                            label: 'Beneficio Neto ($B)',
+                            data: financialsData.netIncome,
+                            borderColor: '#00ff88',
+                            backgroundColor: 'rgba(0, 255, 136, 0.1)',
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#00ff88'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#94a3b8', font: { family: 'Inter', size: 12 } }
+                        },
+                        tooltip: {
+                            backgroundColor: '#0d1322',
+                            borderColor: '#1a243a',
+                            borderWidth: 1,
+                            titleColor: '#f8fafc',
+                            bodyColor: '#94a3b8',
+                            bodyFont: { family: 'JetBrains Mono' }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(26, 36, 58, 0.5)' },
+                            ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 11 } }
+                        },
+                        y: {
+                            grid: { color: 'rgba(26, 36, 58, 0.5)' },
+                            ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 11 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // TAB NAVIGATION FILTERING
+        function switchTab(tab) {
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(btn => {
+                btn.className = "tab-btn px-3 py-1.5 rounded-lg text-xs font-medium border border-transparent text-cyber-text hover:text-cyber-bright hover:bg-cyber-hover flex items-center gap-1.5 whitespace-nowrap transition";
+            });
+
+            const activeBtn = document.getElementById(`tab-${tab}`);
+            if (activeBtn) {
+                activeBtn.className = "tab-btn px-3 py-1.5 rounded-lg text-xs font-medium border border-cyber-green bg-cyber-green/10 text-cyber-green flex items-center gap-1.5 whitespace-nowrap transition";
+            }
+
+            const secFinancials = document.getElementById('section-financials');
+            const secTechnical = document.getElementById('section-technical');
+            const secEarnings = document.getElementById('section-earnings');
+            const secNews = document.getElementById('section-news');
+
+            // Reset visibility
+            secFinancials.style.display = "flex";
+            secTechnical.style.display = "flex";
+            secEarnings.style.display = "flex";
+            secNews.style.display = "flex";
+
+            if (tab === 'technical') {
+                secFinancials.style.display = "none";
+                secEarnings.style.display = "none";
+            } else if (tab === 'earnings') {
+                secFinancials.style.display = "none";
+            } else if (tab === 'news') {
+                secFinancials.style.display = "none";
+                secTechnical.style.display = "none";
+            }
+        }
+
+        // TOGGLE ALL SECTIONS VISIBILITY
+        let allVisible = true;
+        function toggleAllSections() {
+            allVisible = !allVisible;
+            const sections = ['section-financials', 'section-technical', 'section-earnings', 'section-news', 'section-keystats'];
+            sections.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = allVisible ? "flex" : "none";
+            });
+        }
+    </script>
+</body>
+</html>
