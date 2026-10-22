@@ -1,849 +1,1621 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HagenAcademy - Simulador Cyberpunk</title>
-    <!-- Chart.js CDN -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-    <!-- FontAwesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts: Orbitron & JetBrains Mono for Cyberpunk aesthetic -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
-    
-    <style>
-        :root {
-            --bg-dark: #030509;
-            --panel-bg: rgba(10, 15, 26, 0.85);
-            --panel-border: #00ff66;
-            --neon-green: #00ff66;
-            --neon-green-glow: rgba(0, 255, 102, 0.35);
-            --neon-red: #ff0055;
-            --neon-red-glow: rgba(255, 0, 85, 0.35);
-            --neon-cyan: #00f3ff;
-            --neon-yellow: #ffea00;
-            --text-main: #e2e8f0;
-            --text-muted: #64748b;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HagenAcademy · Terminal Pro</title>
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
+<!-- ============================================================
+     LIBRERÍAS EXTERNAS
+     - Tailwind: utilidades CSS
+     - Chart.js: gráficos financieros
+     - FontAwesome: iconos
+     - Google Fonts: tipografías Inter + JetBrains Mono
+     ============================================================ -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  /* Configuración del tema Tailwind (colores cyber + tipografías) */
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        colors: {
+          cyber: {
+            bg: '#070a12',
+            card: '#0d1322',
+            border: '#1a243a',
+            hover: '#151e33',
+            green: '#00ff88',
+            red: '#ff3366',
+            cyan: '#00e5ff',
+            text: '#8294ad',
+            bright: '#f8fafc'
+          }
+        },
+        fontFamily: {
+          sans: ['Inter', 'sans-serif'],
+          mono: ['JetBrains Mono', 'monospace']
         }
+      }
+    }
+  };
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 
-        body {
-            background-color: var(--bg-dark);
-            background-image: 
-                radial-gradient(circle at 15% 15%, rgba(0, 255, 102, 0.05) 0%, transparent 40%),
-                radial-gradient(circle at 85% 85%, rgba(255, 0, 85, 0.05) 0%, transparent 40%),
-                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-            background-size: 100% 100%, 100% 100%, 30px 30px, 30px 30px;
-            color: var(--text-main);
-            font-family: 'JetBrains Mono', monospace;
-            padding: 20px 10px;
-            min-height: 100vh;
-        }
+<!-- ============================================================
+     ESTILOS GLOBALES (DOS CAPAS)
+     Capa 1: variables base + estilos del simulador
+     Capa 2: overrides estética "DeepSeek" + terminal
+     ============================================================ -->
+<style>
+/* ===== CAPA 1: Variables base y estilos del simulador ===== */
+:root {
+  --bg: #030509;
+  --panel-bg: rgba(10, 15, 26, .92);
+  --gold: #00ff66;
+  --up: #00ff66;
+  --down: #ff0055;
+  --muted: #64748b;
+  --line: rgba(0, 255, 102, .25);
+  --grid: rgba(255, 255, 255, .05);
+  --neon-green: #00ff66;
+  --neon-green-glow: rgba(0, 255, 102, .35);
+  --neon-red: #ff0055;
+  --neon-red-glow: rgba(255, 0, 85, .35);
+  --neon-cyan: #00f3ff;
+  --text-main: #e2e8f0;
+}
 
-        .wrap {
-            max-width: 1100px;
-            margin: 0 auto;
-        }
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-        /* Header */
-        header {
-            text-align: center;
-            margin-bottom: 30px;
-            position: relative;
-        }
+body {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(circle at 15% 15%, rgba(0, 255, 102, .05) 0%, transparent 40%),
+    radial-gradient(circle at 85% 85%, rgba(255, 0, 85, .05) 0%, transparent 40%),
+    linear-gradient(rgba(255, 255, 255, .02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, .02) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 30px 30px, 30px 30px;
+  color: var(--text-main);
+  font-family: 'JetBrains Mono', monospace;
+  padding: 20px 10px;
+  min-height: 100vh;
+}
 
-        h1 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 2.2rem;
-            font-weight: 900;
-            letter-spacing: 2px;
-            color: #fff;
-            text-shadow: 0 0 10px var(--neon-green), 0 0 20px var(--neon-green-glow);
-            text-transform: uppercase;
-        }
+.wrap { max-width: 1100px; margin: 0 auto; }
 
-        .subtitle {
-            color: var(--neon-cyan);
-            font-size: 0.85rem;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            margin-top: 5px;
-            text-shadow: 0 0 5px rgba(0, 243, 255, 0.5);
-        }
+header { text-align: center; margin-bottom: 26px; }
 
-        /* Cyber Panels */
-        .cyber-panel {
-            background: var(--panel-bg);
-            border: 1px solid rgba(0, 255, 102, 0.3);
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 25px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.7), inset 0 0 15px rgba(0, 255, 102, 0.05);
-            position: relative;
-            clip-path: polygon(
-                0 0, 
-                calc(100% - 15px) 0, 
-                100% 15px, 
-                100% 100%, 
-                15px 100%, 
-                0 calc(100% - 15px)
-            );
-        }
+h1 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: #fff;
+  text-shadow: 0 0 10px var(--neon-green), 0 0 20px var(--neon-green-glow);
+  text-transform: uppercase;
+}
 
-        .cyber-panel::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 5px;
-            height: 100%;
-            background: var(--neon-green);
-            box-shadow: 0 0 8px var(--neon-green);
-        }
+.brand {
+  font-size: .7rem;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--neon-cyan);
+  text-shadow: 0 0 5px rgba(0, 243, 255, .5);
+  margin-bottom: 6px;
+}
 
-        .panel-title {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.1rem;
-            color: var(--neon-green);
-            text-transform: uppercase;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            text-shadow: 0 0 8px var(--neon-green-glow);
-        }
+.subtitle {
+  color: var(--neon-cyan);
+  font-size: .78rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-top: 6px;
+  text-shadow: 0 0 5px rgba(0, 243, 255, .5);
+}
 
-        /* Controls Grid */
-        .controls-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 20px;
-        }
+.sub { color: var(--muted); font-size: .75rem; max-width: 80ch; margin: 10px auto 0; }
 
-        .control-group {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
+/* Paneles con corte diagonal tipo cyberpunk */
+.cyber-panel {
+  background: var(--panel-bg);
+  border: 1px solid rgba(0, 255, 102, .3);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 22px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 15px rgba(0, 0, 0, .7), inset 0 0 15px rgba(0, 255, 102, .05);
+  position: relative;
+  clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 15px 100%, 0 calc(100% - 15px));
+}
+.cyber-panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 5px; height: 100%;
+  background: var(--neon-green);
+  box-shadow: 0 0 8px var(--neon-green);
+}
 
-        label {
-            font-size: 0.75rem;
-            color: var(--neon-cyan);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
+.panel-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1rem;
+  color: var(--neon-green);
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-shadow: 0 0 8px var(--neon-green-glow);
+}
 
-        input[type="number"], select {
-            background: #060a12;
-            border: 1px solid rgba(0, 255, 102, 0.4);
-            color: #fff;
-            padding: 10px 14px;
-            border-radius: 4px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.95rem;
-            outline: none;
-            transition: all 0.2s ease;
-        }
+.phint { color: var(--muted); font-size: .72rem; margin: 0 0 6px; }
 
-        input[type="number"]:focus, select:focus {
-            border-color: var(--neon-green);
-            box-shadow: 0 0 10px var(--neon-green-glow);
-        }
+/* Controles (selects, inputs, botones) del simulador */
+.controls { display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end; margin-top: 6px; }
+.controls label {
+  font-size: .7rem;
+  color: var(--neon-cyan);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
 
-        /* Preset Buttons & Cyber Buttons */
-        .presets-bar {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 15px;
-            align-items: center;
-        }
+select, input {
+  background: #060a12;
+  border: 1px solid rgba(0, 255, 102, .4);
+  color: #fff;
+  padding: 9px 12px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .85rem;
+  outline: none;
+  transition: all .2s ease;
+}
+select:focus, input:focus {
+  border-color: var(--neon-green);
+  box-shadow: 0 0 10px var(--neon-green-glow);
+}
+input[type=number] { width: 150px; }
 
-        .btn-cyber {
-            background: rgba(0, 255, 102, 0.08);
-            border: 1px solid var(--neon-green);
-            color: var(--neon-green);
-            padding: 8px 14px;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 0 5px var(--neon-green-glow);
-        }
+button {
+  background: rgba(0, 255, 102, .08);
+  border: 1px solid var(--neon-green);
+  color: var(--neon-green);
+  padding: 8px 14px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: .7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all .2s ease;
+  box-shadow: 0 0 5px var(--neon-green-glow);
+}
+button:hover { background: var(--neon-green); color: #000; box-shadow: 0 0 15px var(--neon-green); }
+button.ghost {
+  border-color: rgba(0, 243, 255, .5);
+  color: var(--neon-cyan);
+  background: rgba(0, 243, 255, .06);
+  box-shadow: 0 0 5px rgba(0, 243, 255, .2);
+}
+button.ghost:hover { background: var(--neon-cyan); color: #000; box-shadow: 0 0 15px var(--neon-cyan); }
+button.on { background: var(--neon-green); color: #000; }
+button.rm {
+  border-color: var(--neon-red);
+  color: var(--neon-red);
+  background: rgba(255, 0, 85, .08);
+  box-shadow: 0 0 5px var(--neon-red-glow);
+  padding: 8px 12px;
+}
+button.rm:hover { background: var(--neon-red); color: #fff; }
 
-        .btn-cyber:hover {
-            background: var(--neon-green);
-            color: #000;
-            box-shadow: 0 0 15px var(--neon-green);
-        }
+/* Fila de activos del portafolio */
+.assetrow {
+  display: grid;
+  grid-template-columns: 1fr 110px 45px;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+  max-width: 520px;
+}
 
-        .btn-cyber-red {
-            border-color: var(--neon-red);
-            color: var(--neon-red);
-            background: rgba(255, 0, 85, 0.08);
-            box-shadow: 0 0 5px var(--neon-red-glow);
-        }
+/* Barra de suma de pesos */
+.sumbar {
+  height: 8px;
+  background: #0f172a;
+  border: 1px solid rgba(0, 255, 102, .3);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 12px;
+  max-width: 520px;
+}
+.sumbar i {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: var(--neon-green);
+  box-shadow: 0 0 10px var(--neon-green);
+  transition: width .3s, background .3s;
+}
 
-        .btn-cyber-red:hover {
-            background: var(--neon-red);
-            color: #fff;
-            box-shadow: 0 0 15px var(--neon-red);
-        }
+/* Mensajes del simulador */
+.msg {
+  padding: 10px 14px;
+  border-radius: 4px;
+  background: #020408;
+  border: 1px solid #1e293b;
+  color: var(--muted);
+  max-width: 680px;
+  margin-top: 10px;
+  font-size: .75rem;
+}
+.msg.bad { border-color: var(--neon-red); color: var(--neon-red); text-shadow: 0 0 5px var(--neon-red-glow); }
+.msg.good { border-color: var(--neon-green); color: var(--neon-green); text-shadow: 0 0 5px var(--neon-green-glow); }
 
-        /* Portfolio Editor Rows */
-        .asset-row {
-            display: grid;
-            grid-template-columns: 1fr 100px 45px;
-            gap: 10px;
-            align-items: center;
-            margin-bottom: 10px;
-        }
+/* Tarjetas de métricas del simulador */
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 22px; }
+.tile { background: #060a12; border: 1px solid rgba(0, 243, 255, .2); border-radius: 6px; padding: 15px; }
+.tile .k { font-size: .65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+.tile .v { font-family: 'Orbitron', sans-serif; font-size: 1.3rem; font-weight: 700; margin-top: 5px; font-variant-numeric: tabular-nums; }
+.tile .v.up { color: var(--neon-green); text-shadow: 0 0 10px var(--neon-green-glow); }
+.tile .v.down { color: var(--neon-red); text-shadow: 0 0 10px var(--neon-red-glow); }
+.tile .s { font-size: .68rem; color: var(--muted); margin-top: 4px; }
+.tile.hero { border-color: var(--neon-green); box-shadow: 0 0 12px rgba(0, 255, 102, .15), inset 0 0 12px rgba(0, 255, 102, .05); }
 
-        .btn-remove {
-            height: 40px;
-            width: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0;
-            font-size: 1rem;
-        }
+/* Contenedores de gráficos */
+.chartbox { position: relative; height: 380px; margin-top: 12px; }
+.chartbox.short { height: 300px; }
 
-        /* Weight status bar */
-        .weight-status-container {
-            margin-top: 15px;
-            padding: 10px 14px;
-            background: #020408;
-            border-radius: 4px;
-            border: 1px solid #1e293b;
-        }
+/* Grids responsive para paneles */
+.row2, .row3 { display: grid; gap: 0; grid-template-columns: 1fr; }
+.table-scroll { overflow-x: auto; }
 
-        .weight-progress-bar {
-            width: 100%;
-            height: 8px;
-            background: #0f172a;
-            border-radius: 4px;
-            overflow: hidden;
-            margin-bottom: 8px;
-        }
+/* Tablas del simulador */
+table { width: 100%; border-collapse: collapse; font-size: .78rem; }
+th {
+  font-family: 'Orbitron', sans-serif;
+  color: var(--neon-cyan);
+  padding: 10px;
+  border-bottom: 1px solid rgba(0, 243, 255, .3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-align: right;
+  font-size: .65rem;
+}
+td { padding: 10px; border-bottom: 1px solid rgba(255, 255, 255, .05); text-align: right; white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+tr:hover td { background: rgba(0, 255, 102, .03); }
+tr.hl td { background: rgba(0, 255, 102, .07); }
+tfoot td { font-weight: 800; border-top: 2px solid var(--neon-green); color: #fff; }
 
-        .weight-progress-fill {
-            height: 100%;
-            width: 0%;
-            background: var(--neon-green);
-            box-shadow: 0 0 10px var(--neon-green);
-            transition: width 0.3s ease, background-color 0.3s ease;
-        }
+.pill {
+  font-size: .6rem;
+  border: 1px solid rgba(0, 243, 255, .4);
+  border-radius: 20px;
+  padding: 2px 8px;
+  color: var(--neon-cyan);
+}
 
-        .weight-text {
-            font-size: 0.8rem;
-            display: flex;
-            justify-content: space-between;
-        }
+.foot { font-size: .7rem; color: var(--muted); max-width: 94ch; }
+.hidden { display: none !important; }
+.up { color: var(--neon-green); }
+.down { color: var(--neon-red); }
 
-        .weight-valid {
-            color: var(--neon-green);
-            text-shadow: 0 0 5px var(--neon-green-glow);
-        }
+/* Overlay + spinner (no se usa ahora pero queda listo) */
+.loading-overlay {
+  text-align: center;
+  padding: 40px;
+  font-family: 'Orbitron', sans-serif;
+  color: var(--neon-green);
+  font-size: .95rem;
+  letter-spacing: 2px;
+  text-shadow: 0 0 10px var(--neon-green-glow);
+}
+.spinner {
+  display: inline-block;
+  width: 30px; height: 30px;
+  border: 3px solid rgba(0, 255, 102, .3);
+  border-radius: 50%;
+  border-top-color: var(--neon-green);
+  animation: spin 1s ease-in-out infinite;
+  margin-bottom: 10px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 
-        .weight-invalid {
-            color: var(--neon-red);
-            text-shadow: 0 0 5px var(--neon-red-glow);
-        }
+/* Responsive */
+@media (min-width: 900px) {
+  .row2 { grid-template-columns: 1fr 1fr; gap: 22px; }
+  .row3 { grid-template-columns: 1fr 1fr 1fr; gap: 22px; }
+}
+@media (max-width: 600px) {
+  h1 { font-size: 1.35rem; }
+  .cyber-panel { padding: 15px; }
+  .assetrow { grid-template-columns: 1fr 80px 42px; }
+  .chartbox { height: 260px; }
+  .chartbox.short { height: 240px; }
+}
 
-        /* Tile Metrics */
-        .tiles-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
+/* ===== CAPA 2: Overrides estética "DeepSeek" + terminal ===== */
+:root {
+  --bg: #070a12;
+  --panel-bg: #0d1322;
+  --gold: #00ff88;
+  --up: #00ff88;
+  --down: #ff3366;
+  --muted: #8294ad;
+  --neon-green: #00ff88;
+  --neon-green-glow: rgba(0, 255, 136, .35);
+  --neon-red: #ff3366;
+  --neon-red-glow: rgba(255, 51, 102, .35);
+  --neon-cyan: #00e5ff;
+  --text-main: #e2e8f0;
+  --panel: #0d1322;
+  --line: rgba(0, 255, 136, .22);
+}
+body { font-family: 'Inter', sans-serif; background: #070a12; background-image: none; }
+.wrap { font-family: 'JetBrains Mono', monospace; }
+.font-mono-val { font-family: 'JetBrains Mono', monospace; }
 
-        .tile-card {
-            background: #060a12;
-            border: 1px solid rgba(0, 243, 255, 0.2);
-            border-radius: 6px;
-            padding: 15px;
-            position: relative;
-            overflow: hidden;
-        }
+/* Scrollbars temáticos */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #070a12; }
+::-webkit-scrollbar-thumb { background: #1a243a; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #00ff88; }
 
-        .tile-card .lbl {
-            font-size: 0.7rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
+/* Cinta de cotizaciones (ticker tape) */
+.ticker-tape { background: #050810; border: 1px solid #1a243a; border-radius: 8px; overflow: hidden; position: relative; }
+.ticker-tape::before, .ticker-tape::after {
+  content: ''; position: absolute; top: 0; bottom: 0; width: 40px; z-index: 2; pointer-events: none;
+}
+.ticker-tape::before { left: 0; background: linear-gradient(90deg, #050810, transparent); }
+.ticker-tape::after { right: 0; background: linear-gradient(270deg, #050810, transparent); }
+.ticker-tape-inner {
+  display: inline-flex; gap: 2rem; padding: 8px 0;
+  animation: scroll 90s linear infinite; white-space: nowrap;
+}
+.ticker-tape:hover .ticker-tape-inner { animation-play-state: paused; }
+@keyframes scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.tape-item {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: 'JetBrains Mono', monospace; font-size: 12px;
+  cursor: pointer; transition: opacity .2s;
+}
+.tape-item:hover { opacity: .7; }
+.tape-sym { font-weight: 700; color: #f8fafc; }
+.tape-price { color: #8294ad; }
+.tape-chg.up { color: #00ff88; }
+.tape-chg.down { color: #ff3366; }
 
-        .tile-card .val {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.6rem;
-            font-weight: 700;
-            margin-top: 5px;
-        }
+/* Botones de período (1M / 3M / TODO) */
+.period-btn {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  color: #8294ad;
+  transition: .2s;
+  cursor: pointer;
+  font-family: 'JetBrains Mono', monospace;
+}
+.period-btn:hover { color: #f8fafc; background: #151e33; }
+.period-btn.active { background: rgba(0, 255, 136, .15); color: #00ff88; border-color: rgba(0, 255, 136, .4); }
 
-        .val.green {
-            color: var(--neon-green);
-            text-shadow: 0 0 10px var(--neon-green-glow);
-        }
+/* Medidor semicircular (gauge) */
+.gauge-container { position: relative; width: 160px; height: 80px; }
+.gauge-bg { fill: none; stroke: #1a243a; stroke-width: 12; }
+.gauge-fill { fill: none; stroke-width: 12; stroke-linecap: round; transition: stroke-dashoffset .8s ease, stroke .5s ease; }
 
-        .val.red {
-            color: var(--neon-red);
-            text-shadow: 0 0 10px var(--neon-red-glow);
-        }
+/* Barras de sentimiento social */
+.sent-bar { height: 6px; border-radius: 3px; background: #1a243a; overflow: hidden; }
+.sent-bar-fill { height: 100%; border-radius: 3px; transition: width .6s ease; }
 
-        /* Chart container */
-        .chart-container {
-            position: relative;
-            height: 380px;
-            width: 100%;
-            margin-top: 10px;
-        }
+/* Barra de rango de price target (analistas) */
+.target-bar {
+  position: relative;
+  height: 8px;
+  background: linear-gradient(90deg, #ff3366 0%, #ffb020 50%, #00ff88 100%);
+  border-radius: 4px;
+}
+.target-marker {
+  position: absolute;
+  top: -4px;
+  width: 4px; height: 16px;
+  background: #f8fafc;
+  border-radius: 2px;
+  transform: translateX(-50%);
+  box-shadow: 0 0 6px rgba(248, 250, 252, .7);
+}
 
-        /* Table Cyberpunk */
-        .table-responsive {
-            overflow-x: auto;
-        }
+/* Badges de sentimiento (alcista / bajista / neutro) */
+.sbadge { font-size: 9px; padding: 1px 6px; border-radius: 999px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
+.sbadge.bull { background: rgba(0, 255, 136, .15); color: #00ff88; border: 1px solid rgba(0, 255, 136, .3); }
+.sbadge.bear { background: rgba(255, 51, 102, .15); color: #ff3366; border: 1px solid rgba(255, 51, 102, .3); }
+.sbadge.neut { background: rgba(148, 163, 184, .15); color: #8294ad; border: 1px solid rgba(148, 163, 184, .3); }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.85rem;
-            text-align: left;
-        }
-
-        th {
-            font-family: 'Orbitron', sans-serif;
-            color: var(--neon-cyan);
-            padding: 12px 10px;
-            border-bottom: 1px solid rgba(0, 243, 255, 0.3);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        td {
-            padding: 12px 10px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        tr:hover td {
-            background: rgba(0, 255, 102, 0.03);
-        }
-
-        .loading-overlay {
-            text-align: center;
-            padding: 40px;
-            font-family: 'Orbitron', sans-serif;
-            color: var(--neon-green);
-            font-size: 1.2rem;
-            letter-spacing: 2px;
-            text-shadow: 0 0 10px var(--neon-green-glow);
-        }
-
-        .spinner {
-            display: inline-block;
-            width: 30px;
-            height: 30px;
-            border: 3px solid rgba(0,255,102,0.3);
-            border-radius: 50%;
-            border-top-color: var(--neon-green);
-            animation: spin 1s ease-in-out infinite;
-            margin-bottom: 10px;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        @media (max-width: 600px) {
-            h1 { font-size: 1.5rem; }
-            .cyber-panel { padding: 15px; }
-            .asset-row { grid-template-columns: 1fr 80px 40px; }
-            .chart-container { height: 260px; }
-        }
-    </style>
+/* Badge "DEMO" para los paneles aún no conectados a API real */
+.demo-badge {
+  font-size: 9px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  background: rgba(255, 176, 32, .15);
+  color: #ffb020;
+  border: 1px solid rgba(255, 176, 32, .35);
+}
+</style>
 </head>
-<body>
+<body class="p-2 md:p-4 min-h-screen">
 
-    <div class="wrap">
-        <header>
-            <h1><i class="fa-solid fa-chart-line"></i> HagenAcademy</h1>
-            <div class="subtitle">Simulador de Portafolios // Cyberpunk Edition</div>
-        </header>
+<!-- ============================================================
+     BLOQUE 1: TERMINAL (ticker inspector + paneles demo)
+     ============================================================ -->
+<div class="max-w-7xl mx-auto w-full flex flex-col gap-3" id="terminal-section">
 
-        <div id="loader" class="loading-overlay">
-            <div class="spinner"></div>
-            <div>INICIALIZANDO TERMINAL DE MERCADO...</div>
+  <!-- Header principal -->
+  <header class="bg-cyber-card border border-cyber-border rounded-xl p-4 flex flex-wrap justify-between items-center gap-4"
+          style="box-shadow: 0 0 15px rgba(0,255,136,.12)">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-lg bg-cyber-green/10 border border-cyber-green/40 flex items-center justify-center text-cyber-green font-bold text-xl font-mono">
+        HA
+      </div>
+      <div>
+        <h1 class="font-bold tracking-wide flex items-center gap-2" style="color:#f8fafc;font-size:1.15rem">
+          HAGENACADEMY
+          <span class="text-xs px-2 py-0.5 rounded bg-cyber-green/20 text-cyber-green border border-cyber-green/30 uppercase tracking-widest font-mono">
+            Terminal Pro
+          </span>
+        </h1>
+        <p class="text-xs text-cyber-text">Datos reales: 1-jun → 20-oct-2026 · Yahoo Finance (Excel HAGEN_ACADEMY_Portafolio_2026)</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="text-xs text-cyber-text font-mono uppercase">Ticker:</span>
+      <select id="tickerSelect" onchange="selTicker(this.value)"
+              class="bg-cyber-bg border border-cyber-border rounded-lg px-3 py-2 text-cyber-bright font-mono-val font-bold text-sm focus:outline-none cursor-pointer"
+              style="border-color:#1a243a">
+        <option value="META">META</option>
+        <option value="VOO">VOO</option>
+        <option value="QQQ">QQQ</option>
+        <option value="VXUS">VXUS</option>
+        <option value="AAPL">AAPL</option>
+        <option value="NVDA">NVDA</option>
+        <option value="PLTR">PLTR</option>
+        <option value="SNAP">SNAP</option>
+        <option value="NFLX">NFLX</option>
+        <option value="MSFT">MSFT</option>
+        <option value="TSLA">TSLA</option>
+        <option value="AVGO">AVGO</option>
+      </select>
+    </div>
+  </header>
+
+  <!-- Ticker tape (se rellena por JS) -->
+  <div class="ticker-tape">
+    <div class="ticker-tape-inner" id="tickerTape"></div>
+  </div>
+
+  <!-- Grid principal: 8/12 para gráficos + 4/12 para paneles -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-3">
+
+    <!-- ===== COLUMNA IZQUIERDA (8 cols): ficha del ticker ===== -->
+    <div class="lg:col-span-8 flex flex-col gap-3">
+
+      <!-- Ficha: nombre, precio, cambio, gráfico y estadísticas reales -->
+      <div class="bg-cyber-card border border-cyber-border rounded-xl overflow-hidden">
+        <div class="p-5 pb-3">
+          <div class="flex flex-wrap justify-between items-start gap-4">
+            <div>
+              <div class="flex items-center gap-2 mb-1 flex-wrap">
+                <h2 id="tName" class="text-2xl font-bold text-cyber-bright tracking-tight">—</h2>
+                <span id="tExchange" class="text-xs px-2 py-0.5 rounded bg-cyber-border text-cyber-text font-mono">—</span>
+                <span class="text-xs px-2 py-0.5 rounded bg-cyber-green/10 text-cyber-green border border-cyber-green/30 font-mono">
+                  DATOS REALES
+                </span>
+              </div>
+              <p class="text-xs text-cyber-text">Precios de cierre · Sin comisiones ni dividendos · Ejercicio educativo</p>
+            </div>
+            <div class="text-right">
+              <div id="tPrice" class="text-3xl font-bold font-mono-val text-cyber-bright">$0.00</div>
+              <div id="tChange" class="text-sm font-semibold font-mono-val text-cyber-red flex items-center justify-end gap-1">—</div>
+              <div class="text-[11px] text-cyber-text font-mono mt-0.5">Último cierre disponible</div>
+            </div>
+          </div>
         </div>
-
-        <div id="main-content" style="display: none;">
-            
-            <!-- SECTION 1: CAPITAL & ENTRY CONFIG -->
-            <div class="cyber-panel">
-                <div class="panel-title"><i class="fa-solid fa-sliders"></i> 1. Parámetros de Inversión</div>
-                <div class="controls-grid">
-                    <div class="control-group">
-                        <label for="capital"><i class="fa-solid fa-dollar-sign"></i> Capital Inicial ($USD)</label>
-                        <input type="number" id="capital" value="1000" min="100" step="100">
-                    </div>
-                    <div class="control-group">
-                        <label for="startDate"><i class="fa-regular fa-calendar-check"></i> Fecha de Entrada</label>
-                        <select id="startDate"></select>
-                    </div>
-                    <div class="control-group">
-                        <label for="benchmark"><i class="fa-solid fa-code-compare"></i> Comparar Contra (Benchmark)</label>
-                        <select id="benchmark">
-                            <option value="VOO">VOO (S&P 500)</option>
-                            <option value="QQQ">QQQ (Nasdaq 100)</option>
-                            <option value="NONE">Ninguno</option>
-                        </select>
-                    </div>
-                </div>
+        <div class="px-5 pb-2">
+          <!-- Selector de período -->
+          <div class="flex items-center justify-between flex-wrap gap-2 mb-2">
+            <div class="flex bg-cyber-bg p-1 rounded-lg border border-cyber-border gap-0.5">
+              <button onclick="setPeriod('1M')" data-p="1M" class="period-btn">1M</button>
+              <button onclick="setPeriod('3M')" data-p="3M" class="period-btn">3M</button>
+              <button onclick="setPeriod('ALL')" data-p="ALL" class="period-btn active">TODO</button>
             </div>
-
-            <!-- SECTION 2: DYNAMIC PORTFOLIO EDITOR -->
-            <div class="cyber-panel">
-                <div class="panel-title"><i class="fa-solid fa-cubes"></i> 2. Configuración de Activos y Pesos (%)</div>
-                
-                <!-- Presets -->
-                <div class="presets-bar">
-                    <span style="font-size:0.75rem; color:var(--text-muted); font-weight:bold;">PLANTILLAS:</span>
-                    <button class="btn-cyber" onclick="applyPreset('7030')">Núcleo 70/30</button>
-                    <button class="btn-cyber" onclick="applyPreset('tech4')">Tech 4x25</button>
-                    <button class="btn-cyber" onclick="applyPreset('solovoo')">Solo VOO</button>
-                    <button class="btn-cyber" onclick="addAssetRow()" style="margin-left: auto;">
-                        <i class="fa-solid fa-plus"></i> Añadir Activo
-                    </button>
-                </div>
-
-                <!-- Asset Rows Container -->
-                <div id="asset-rows-container"></div>
-
-                <!-- Weight validation bar -->
-                <div class="weight-status-container">
-                    <div class="weight-progress-bar">
-                        <div id="weight-fill" class="weight-progress-fill"></div>
-                    </div>
-                    <div class="weight-text">
-                        <span id="weight-msg" class="weight-valid"><i class="fa-solid fa-circle-check"></i> Pesos Válidos. Simulando compra...</span>
-                        <span id="weight-num">100.0% / 100%</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- SECTION 3: PERFORMANCE TILES & CHART -->
-            <div class="cyber-panel">
-                <div class="panel-title"><i class="fa-solid fa-chart-area"></i> 3. Rendimiento del Portafolio</div>
-                
-                <div class="tiles-grid">
-                    <div class="tile-card">
-                        <div class="lbl">Valor Final Estimado</div>
-                        <div class="val green" id="lblFinalVal">$0.00</div>
-                    </div>
-                    <div class="tile-card">
-                        <div class="lbl">Retorno Total</div>
-                        <div class="val green" id="lblTotalRet">0.00%</div>
-                    </div>
-                    <div class="tile-card">
-                        <div class="lbl">Máxima Caída (Max DD)</div>
-                        <div class="val red" id="lblMaxDD">0.00%</div>
-                    </div>
-                </div>
-
-                <div class="chart-container">
-                    <canvas id="cyberChart"></canvas>
-                </div>
-            </div>
-
-            <!-- SECTION 4: ASSET BREAKDOWN TABLE -->
-            <div class="cyber-panel">
-                <div class="panel-title"><i class="fa-solid fa-list-check"></i> 4. Desglose Detallado por Activo</div>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Ticker / Activo</th>
-                                <th>Peso (%)</th>
-                                <th>Precio Entrada</th>
-                                <th>Precio Actual / Salida</th>
-                                <th>Rendimiento</th>
-                            </tr>
-                        </thead>
-                        <tbody id="breakdownTbody"></tbody>
-                    </table>
-                </div>
-            </div>
-
+            <span id="periodReturn" class="text-xs font-mono-val font-semibold text-cyber-green"></span>
+          </div>
+          <!-- Gráfico de precio del ticker -->
+          <div class="relative w-full h-64"><canvas id="priceChart"></canvas></div>
         </div>
+        <!-- Strip de estadísticas reales (se rellena por JS) -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 px-5 py-4 border-t border-cyber-border/60 text-xs">
+          <div><span class="text-cyber-text block">Volatilidad diaria</span><span id="statVol" class="text-cyber-bright font-mono-val font-semibold">—</span></div>
+          <div><span class="text-cyber-text block">Máximo en datos</span><span id="statMax" class="text-cyber-bright font-mono-val font-semibold">—</span></div>
+          <div><span class="text-cyber-text block">Mínimo en datos</span><span id="statMin" class="text-cyber-bright font-mono-val font-semibold">—</span></div>
+          <div><span class="text-cyber-text block">Drawdown máx.</span><span id="statDD" class="text-cyber-red font-mono-val font-semibold">—</span></div>
+        </div>
+      </div>
+
+      <!-- Beneficios trimestrales (DEMO, se conectará a API después) -->
+      <div class="bg-cyber-card border border-cyber-border rounded-xl p-5 flex flex-col gap-3">
+        <div class="flex justify-between items-center flex-wrap gap-2">
+          <div>
+            <h3 class="text-base font-bold text-cyber-bright flex items-center gap-2">
+              <i class="fa-solid fa-chart-column text-cyber-green"></i>
+              Beneficios Trimestrales <span class="demo-badge">Demo</span>
+            </h3>
+            <p class="text-xs text-cyber-text">Resultado Real vs Estimación — conexión a API después</p>
+          </div>
+          <!-- Toggle trimestral / anual -->
+          <div class="flex bg-cyber-bg p-1 rounded-lg border border-cyber-border text-xs">
+            <button id="btn-quarterly" onclick="setEarnP('quarterly')" class="px-2.5 py-1 rounded-md text-cyber-bright bg-cyber-border font-medium">
+              Trimestral
+            </button>
+            <button id="btn-annual" onclick="setEarnP('annual')" class="px-2.5 py-1 rounded-md text-cyber-text hover:text-cyber-bright transition">
+              Anual
+            </button>
+          </div>
+        </div>
+        <div class="relative w-full h-56"><canvas id="earningsChart"></canvas></div>
+      </div>
+
+      <!-- Ingresos vs beneficio neto (DEMO) -->
+      <div class="bg-cyber-card border border-cyber-border rounded-xl p-5 flex flex-col gap-3">
+        <div>
+          <h3 class="text-base font-bold text-cyber-bright flex items-center gap-2">
+            <i class="fa-solid fa-vault text-cyber-cyan"></i>
+            Ingresos vs Beneficio Neto <span class="demo-badge">Demo</span>
+          </h3>
+          <p class="text-xs text-cyber-text">Evolución anual ($B) — conexión a API después</p>
+        </div>
+        <div class="relative w-full h-56"><canvas id="financialsChart"></canvas></div>
+      </div>
     </div>
 
-    <script>
-        // AVAILABLE TICKERS MASTER LIST
-        const AVAILABLE_TICKERS = ["VOO", "QQQ", "SNAP", "VXUS", "META", "AAPL", "NVDA", "PLTR", "NFLX", "MSFT", "TSLA", "AVGO"];
+    <!-- ===== COLUMNA DERECHA (4 cols): paneles resumen ===== -->
+    <div class="lg:col-span-4 flex flex-col gap-3">
 
-        // HISTORICAL MOCK DATA PIPELINE (Seamless Fallback for Google Sheets Published CSV)
-        const HISTORICAL_DATES = ["2026-06-01", "2026-07-01", "2026-08-01", "2026-09-01", "2026-10-01"];
-        
-        // Base price history per ticker across the dates
-        const TICKER_PRICES = {
-            "VOO":  [500.00, 515.00, 525.00, 510.00, 540.00],
-            "QQQ":  [450.00, 470.00, 485.00, 465.00, 510.00],
-            "SNAP": [15.00,  14.20,  16.00,  13.50,  15.80],
-            "VXUS": [60.00,  61.50,  62.00,  59.80,  63.20],
-            "META": [480.00, 510.00, 530.00, 505.00, 560.00],
-            "AAPL": [210.00, 218.00, 225.00, 220.00, 235.00],
-            "NVDA": [120.00, 130.00, 138.00, 125.00, 145.00],
-            "PLTR": [24.00,  26.50,  29.00,  27.00,  32.00],
-            "NFLX": [640.00, 660.00, 680.00, 670.00, 710.00],
-            "MSFT": [420.00, 435.00, 445.00, 430.00, 455.00],
-            "TSLA": [220.00, 245.00, 230.00, 215.00, 250.00],
-            "AVGO": [160.00, 172.00, 180.00, 168.00, 192.00]
-        };
+      <!-- Panel: estadísticas reales del período -->
+      <div class="bg-cyber-card border border-cyber-border rounded-xl p-5 flex flex-col gap-3">
+        <h3 class="text-xs font-bold text-cyber-bright uppercase tracking-wider border-b border-cyber-border pb-2 flex items-center justify-between">
+          <span>Estadísticas (datos reales)</span>
+          <i class="fa-solid fa-list-check text-cyber-green"></i>
+        </h3>
+        <div class="space-y-2 text-xs">
+          <div class="flex justify-between"><span class="text-cyber-text">Precio inicio (1-jun)</span><span id="statPStart" class="text-cyber-bright font-mono-val font-medium">—</span></div>
+          <div class="flex justify-between"><span class="text-cyber-text">Máximo en datos</span><span id="statPMax" class="text-cyber-bright font-mono-val font-medium">—</span></div>
+          <div class="flex justify-between"><span class="text-cyber-text">Mínimo en datos</span><span id="statPMin" class="text-cyber-bright font-mono-val font-medium">—</span></div>
+          <div class="flex justify-between"><span class="text-cyber-text">Rend. acumulado</span><span id="statRet" class="font-mono-val font-medium">—</span></div>
+          <div class="flex justify-between"><span class="text-cyber-text">Días de datos</span><span id="statDays" class="text-cyber-bright font-mono-val font-medium">—</span></div>
+          <div class="flex justify-between"><span class="text-cyber-text">Último cierre</span><span id="statLastDate" class="text-cyber-bright font-mono-val font-medium">—</span></div>
+        </div>
+      </div>
 
-        let chartInstance = null;
-        let portfolioRows = [
-            { ticker: "VOO", weight: 35 },
-            { ticker: "QQQ", weight: 21 },
-            { ticker: "META", weight: 14 },
-            { ticker: "NVDA", weight: 15 },
-            { ticker: "AAPL", weight: 15 }
-        ];
+      <!-- Panel: gauge de análisis técnico REAL (MM20/50 + momentum) -->
+      <div class="bg-cyber-card border border-cyber-border rounded-xl p-5 flex flex-col items-center text-center gap-3">
+        <h3 class="text-xs font-bold text-cyber-bright uppercase tracking-wider w-full text-left border-b border-cyber-border pb-2 flex items-center justify-between">
+          <span>Análisis Técnico</span>
+          <i class="fa-solid fa-compass text-cyber-cyan"></i>
+        </h3>
+        <div class="gauge-container mt-1">
+          <svg class="w-full h-full" viewBox="0 0 100 50">
+            <path class="gauge-bg" d="M 10 50 A 40 40 0 0 1 90 50"></path>
+            <path id="gaugePath" class="gauge-fill" d="M 10 50 A 40 40 0 0 1 90 50" stroke="#00ff88" stroke-dasharray="126" stroke-dashoffset="30"></path>
+          </svg>
+          <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 font-bold font-mono-val text-xs text-cyber-green" id="gaugeValueText">—</div>
+        </div>
+        <p class="text-[11px] text-cyber-text px-2">Calculado con medias móviles 20/50 y momentum sobre tus cierres reales.</p>
+        <div class="grid grid-cols-3 w-full text-center text-xs border-t border-cyber-border/40 pt-3">
+          <div><span class="block text-cyber-red font-bold">Venta</span><span id="techSellCount" class="text-cyber-bright font-mono-val">—</span></div>
+          <div><span class="block text-cyber-text font-bold">Neutro</span><span id="techNeutralCount" class="text-cyber-bright font-mono-val">—</span></div>
+          <div><span class="block text-cyber-green font-bold">Compra</span><span id="techBuyCount" class="text-cyber-bright font-mono-val">—</span></div>
+        </div>
+      </div>
 
-        // STARTUP
-        window.onload = function() {
-            setTimeout(() => {
-                document.getElementById('loader').style.display = 'none';
-                document.getElementById('main-content').style.display = 'block';
-                initApp();
-            }, 400);
-        };
+      <!-- Panel: consenso de analistas (DEMO) -->
+      <div class="bg-cyber-card border border-cyber-border rounded-xl p-5 flex flex-col gap-3">
+        <h3 class="text-xs font-bold text-cyber-bright uppercase tracking-wider border-b border-cyber-border pb-2 flex items-center justify-between">
+          <span>Consenso de Analistas</span>
+          <span class="demo-badge">Demo</span>
+        </h3>
+        <div class="flex items-center justify-between">
+          <div>
+            <div id="analystRating" class="text-lg font-bold text-cyber-green">—</div>
+            <div id="analystCount" class="text-[11px] text-cyber-text font-mono">—</div>
+          </div>
+          <div class="text-right">
+            <div id="analystUpside" class="text-lg font-bold font-mono-val text-cyber-green">—</div>
+            <div class="text-[11px] text-cyber-text">al precio objetivo</div>
+          </div>
+        </div>
+        <!-- Distribución compra/mantener/venta -->
+        <div class="flex gap-0.5 h-2 rounded overflow-hidden">
+          <div id="distBuy" class="bg-cyber-green" style="width:60%"></div>
+          <div id="distHold" class="bg-cyber-cyan" style="width:25%"></div>
+          <div id="distSell" class="bg-cyber-red" style="width:15%"></div>
+        </div>
+        <div class="flex justify-between text-[10px] font-mono">
+          <span class="text-cyber-green">Compra <span id="countBuy">—</span></span>
+          <span class="text-cyber-cyan">Mantener <span id="countHold">—</span></span>
+          <span class="text-cyber-red">Venta <span id="countSell">—</span></span>
+        </div>
+        <!-- Rango de price targets con marcador del precio actual -->
+        <div class="pt-2 border-t border-cyber-border/60">
+          <div class="flex justify-between text-[10px] font-mono text-cyber-text mb-1">
+            <span>Bajo <span id="targetLow" class="text-cyber-bright font-semibold">—</span></span>
+            <span>Medio <span id="targetAvg" class="text-cyber-bright font-semibold">—</span></span>
+            <span>Alto <span id="targetHigh" class="text-cyber-bright font-semibold">—</span></span>
+          </div>
+          <div class="target-bar"><div id="currentMarker" class="target-marker" style="left:50%"></div></div>
+          <div class="text-[10px] text-cyber-text text-center mt-1 font-mono">
+            Precio actual <span id="targetCurrent" class="text-cyber-bright font-semibold">—</span>
+          </div>
+        </div>
+      </div>
 
-        function initApp() {
-            // Populate Entry Dates
-            const dateSelect = document.getElementById('startDate');
-            dateSelect.innerHTML = '';
-            HISTORICAL_DATES.forEach((d, idx) => {
-                const opt = document.createElement('option');
-                opt.value = idx;
-                opt.textContent = d;
-                dateSelect.appendChild(opt);
-            });
+      <!-- Panel: sentimiento social (DEMO) -->
+      <div class="bg-cyber-card border border-cyber-border rounded-xl p-5 flex flex-col gap-3">
+        <h3 class="text-xs font-bold text-cyber-bright uppercase tracking-wider border-b border-cyber-border pb-2 flex items-center justify-between">
+          <span>Sentimiento Social</span>
+          <span class="demo-badge">Demo</span>
+        </h3>
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="flex items-baseline gap-1">
+              <span id="socialScore" class="text-3xl font-bold font-mono-val text-cyber-green">—</span>
+              <span class="text-xs text-cyber-text">/100</span>
+            </div>
+            <div class="text-[11px] font-semibold text-cyber-green" id="socialLabel">—</div>
+          </div>
+          <div class="text-right">
+            <div id="mentions24h" class="text-sm font-bold font-mono-val text-cyber-bright">—</div>
+            <div class="text-[10px] text-cyber-text">menciones 24h</div>
+            <div id="mentionsTrend" class="text-[10px] font-mono-val text-cyber-green">—</div>
+          </div>
+        </div>
+        <!-- Desglose por fuente: Reddit / X / Noticias -->
+        <div class="space-y-2 pt-2 border-t border-cyber-border/60">
+          <div>
+            <div class="flex justify-between text-[10px] mb-1"><span class="text-cyber-text">Reddit</span><span id="score0" class="font-mono-val text-cyber-bright">—</span></div>
+            <div class="sent-bar"><div id="bar0" class="sent-bar-fill bg-cyber-green" style="width:80%"></div></div>
+          </div>
+          <div>
+            <div class="flex justify-between text-[10px] mb-1"><span class="text-cyber-text">X / Twitter</span><span id="score1" class="font-mono-val text-cyber-bright">—</span></div>
+            <div class="sent-bar"><div id="bar1" class="sent-bar-fill bg-cyber-cyan" style="width:70%"></div></div>
+          </div>
+          <div>
+            <div class="flex justify-between text-[10px] mb-1"><span class="text-cyber-text">Noticias</span><span id="score2" class="font-mono-val text-cyber-bright">—</span></div>
+            <div class="sent-bar"><div id="bar2" class="sent-bar-fill bg-cyber-cyan" style="width:70%"></div></div>
+          </div>
+        </div>
+        <!-- Temas trending -->
+        <div class="pt-2 border-t border-cyber-border/60">
+          <div class="text-[10px] text-cyber-text mb-1.5 uppercase tracking-wide">Temas Trending</div>
+          <div id="topTopics" class="flex flex-wrap gap-1.5"></div>
+        </div>
+        <!-- Posts recientes -->
+        <div class="pt-2 border-t border-cyber-border/60">
+          <div class="text-[10px] text-cyber-text mb-1.5 uppercase tracking-wide">Posts Recientes</div>
+          <div id="socialPosts" class="space-y-2"></div>
+        </div>
+      </div>
 
-            // Bind Event Listeners
-            document.getElementById('capital').addEventListener('input', runSimulation);
-            document.getElementById('startDate').addEventListener('change', runSimulation);
-            document.getElementById('benchmark').addEventListener('change', runSimulation);
+      <!-- Panel: noticias (DEMO) -->
+      <div class="bg-cyber-card border border-cyber-border rounded-xl p-5 flex flex-col gap-3">
+        <h3 class="text-xs font-bold text-cyber-bright uppercase tracking-wider border-b border-cyber-border pb-2 flex items-center justify-between">
+          <span>Noticias Relevantes</span>
+          <span class="demo-badge">Demo</span>
+        </h3>
+        <div id="newsContainer" class="space-y-2.5"></div>
+      </div>
+    </div>
+  </div>
+</div>
 
-            // Render Asset Rows
-            renderAssetRows();
-            runSimulation();
-        }
+<!-- ============================================================
+     BLOQUE 2: SIMULADOR DE PORTAFOLIOS
+     ============================================================ -->
+<div class="wrap" style="max-width:1100px;margin:34px auto 0">
 
-        // RENDER ASSET ROWS IN EDITOR
-        function renderAssetRows() {
-            const container = document.getElementById('asset-rows-container');
-            container.innerHTML = '';
+  <!-- Cabecera del simulador -->
+  <section class="cyber-panel" style="background:#0d1322;border-color:#1a243a;box-shadow:none;clip-path:none">
+    <div class="panel-title">
+      <i class="fa-solid fa-wallet"></i> SIMULADOR DE PORTAFOLIOS
+      <span style="font-size:.6em;color:#00e5ff">· DATOS REALES DE TU EXCEL</span>
+    </div>
+    <p class="phint" style="color:#8294ad">El motor probado (13/13): pesos 100% libres, cualquier capital, cualquier fecha de entrada, 6 gráficas y comparador. Todo se recalcula al instante.</p>
+  </section>
 
-            portfolioRows.forEach((item, index) => {
-                const row = document.createElement('div');
-                row.className = 'asset-row';
+  <!-- Panel 1: capital y fechas -->
+  <section class="cyber-panel">
+    <div class="panel-title"><i class="fa-solid fa-sliders"></i> 1. Tu capital y tu fecha</div>
+    <div class="controls">
+      <label>Capital a simular (USD)<input type="number" id="capital" value="1000" min="1" step="50"></label>
+      <label>Fecha de entrada<select id="start"></select></label>
+      <label>Comparar contra<select id="bench"><option value="">Nada</option></select></label>
+    </div>
+  </section>
 
-                // Ticker Select
-                const select = document.createElement('select');
-                AVAILABLE_TICKERS.forEach(t => {
-                    const opt = document.createElement('option');
-                    opt.value = t;
-                    opt.textContent = t;
-                    if (t === item.ticker) opt.selected = true;
-                    select.appendChild(opt);
-                });
-                select.addEventListener('change', (e) => {
-                    portfolioRows[index].ticker = e.target.value;
-                    runSimulation();
-                });
+  <!-- Panel 2: pesos del portafolio -->
+  <section class="cyber-panel">
+    <div class="panel-title"><i class="fa-solid fa-cubes"></i> 2. Tu portafolio · pesos libres</div>
+    <p class="phint">Los pesos los decides tú: divide como quieras. La suma debe dar exactamente 100%.</p>
+    <div class="controls" style="margin-bottom:12px">
+      <span style="font-size:.68rem;color:var(--muted);font-weight:700">PLANTILLAS:</span>
+      <button type="button" class="ghost" data-preset="core">Núcleo 70/30</button>
+      <button type="button" class="ghost" data-preset="tech">Tech 4×25</button>
+      <button type="button" class="ghost" data-preset="voo">Solo VOO</button>
+      <button type="button" id="addAsset"><i class="fa-solid fa-plus"></i> Añadir</button>
+    </div>
+    <div id="assetList"></div>
+    <div style="margin-top:4px;font-size:.78rem">
+      <b>SUMA DE PESOS: <span id="sumW">0</span>%</b> (objetivo: 100%)
+    </div>
+    <div class="sumbar"><i id="sumFill"></i></div>
+    <div id="sumMsg" class="msg"></div>
+  </section>
 
-                // Weight Input
-                const weightInput = document.createElement('input');
-                weightInput.type = 'number';
-                weightInput.value = item.weight;
-                weightInput.min = 0;
-                weightInput.max = 100;
-                weightInput.step = 0.5;
-                weightInput.addEventListener('input', (e) => {
-                    portfolioRows[index].weight = parseFloat(e.target.value) || 0;
-                    runSimulation();
-                });
+  <!-- Resultados (ocultos si pesos inválidos) -->
+  <div id="results">
 
-                // Delete Button
-                const delBtn = document.createElement('button');
-                delBtn.className = 'btn-cyber btn-cyber-red btn-remove';
-                delBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
-                delBtn.addEventListener('click', () => {
-                    if (portfolioRows.length > 1) {
-                        portfolioRows.splice(index, 1);
-                        renderAssetRows();
-                        runSimulation();
-                    }
-                });
+    <!-- Tarjetas resumen -->
+    <section class="tiles" id="tiles"></section>
 
-                row.appendChild(select);
-                row.appendChild(weightInput);
-                row.appendChild(delBtn);
-                container.appendChild(row);
-            });
+    <!-- Gráfica principal de la inversión -->
+    <section class="cyber-panel">
+      <div class="panel-title"><i class="fa-solid fa-chart-area"></i> 3. Tu inversión día a día</div>
+      <p class="phint" id="chartNote"></p>
+      <div class="chartbox"><canvas id="lineChart"></canvas></div>
+    </section>
 
-            validateWeights();
-        }
+    <!-- Fila 2: drawdown + rendimiento por activo -->
+    <section class="row2">
+      <div class="cyber-panel">
+        <div class="panel-title"><i class="fa-solid fa-arrow-trend-down"></i> 4. El camino duele: drawdown</div>
+        <p class="phint">Caída desde el pico, día a día. La zona profunda es lo que habrías visto en rojo antes del final feliz.</p>
+        <div class="chartbox short"><canvas id="ddChart"></canvas></div>
+      </div>
+      <div class="cyber-panel">
+        <div class="panel-title"><i class="fa-solid fa-layer-group"></i> 5. Quién jaló y quién frenó</div>
+        <p class="phint">Rendimiento acumulado de cada activo (%) desde tu fecha de entrada.</p>
+        <div class="chartbox short"><canvas id="assetChart"></canvas></div>
+      </div>
+    </section>
 
-        // ADD NEW ROW
-        function addAssetRow() {
-            // Find a ticker not used yet or default to first
-            const unused = AVAILABLE_TICKERS.find(t => !portfolioRows.some(r => r.ticker === t)) || AVAILABLE_TICKERS[0];
-            portfolioRows.push({ ticker: unused, weight: 0 });
-            renderAssetRows();
-            runSimulation();
-        }
+    <!-- Fila 3: drift + aporte $ + días verde/rojo -->
+    <section class="row3">
+      <div class="cyber-panel">
+        <div class="panel-title"><i class="fa-solid fa-scale-balanced"></i> 6. Plan vs. realidad</div>
+        <p class="phint">Peso al entrar vs. peso real de hoy (lo que sube "engorda" solo).</p>
+        <div class="chartbox short"><canvas id="driftChart"></canvas></div>
+      </div>
+      <div class="cyber-panel">
+        <div class="panel-title"><i class="fa-solid fa-dollar-sign"></i> 7. Aporte en dólares</div>
+        <p class="phint">Cuánto ganó o perdió cada posición sobre tu capital.</p>
+        <div class="chartbox short"><canvas id="contribChart"></canvas></div>
+      </div>
+      <div class="cyber-panel">
+        <div class="panel-title"><i class="fa-solid fa-circle-half-stroke"></i> 8. Días verde / rojo</div>
+        <p class="phint" id="pieDNote"></p>
+        <div class="chartbox short"><canvas id="pieD"></canvas></div>
+      </div>
+    </section>
 
-        // PRESETS
-        function applyPreset(type) {
-            if (type === '7030') {
-                portfolioRows = [
-                    { ticker: "VOO", weight: 70 },
-                    { ticker: "QQQ", weight: 30 }
-                ];
-            } else if (type === 'tech4') {
-                portfolioRows = [
-                    { ticker: "NVDA", weight: 25 },
-                    { ticker: "AAPL", weight: 25 },
-                    { ticker: "MSFT", weight: 25 },
-                    { ticker: "META", weight: 25 }
-                ];
-            } else if (type === 'solovoo') {
-                portfolioRows = [
-                    { ticker: "VOO", weight: 100 }
-                ];
-            }
-            renderAssetRows();
-            runSimulation();
-        }
+    <!-- Tabla desglose por activo -->
+    <section class="cyber-panel">
+      <div class="panel-title"><i class="fa-solid fa-list-check"></i> 9. Qué aportó cada activo</div>
+      <p class="phint">Resaltada: la posición que más jaló el portafolio.</p>
+      <div class="table-scroll"><table id="assetTable"></table></div>
+    </section>
 
-        // VALIDATE WEIGHTS
-        function validateWeights() {
-            const total = portfolioRows.reduce((sum, r) => sum + r.weight, 0);
-            const fill = document.getElementById('weight-fill');
-            const num = document.getElementById('weight-num');
-            const msg = document.getElementById('weight-msg');
+    <!-- Tabla dinámica por mes/semana -->
+    <section class="cyber-panel">
+      <div class="controls" style="justify-content:space-between;margin:0 0 6px">
+        <div class="panel-title" style="margin:0"><i class="fa-solid fa-table"></i> 10. Tabla dinámica</div>
+        <div class="controls" style="margin:0">
+          <button type="button" id="gM" class="on">Por mes</button>
+          <button type="button" id="gW">Por semana</button>
+        </div>
+      </div>
+      <p class="phint">Variación % y ganancia en $ por mes o semana.</p>
+      <div class="table-scroll"><table id="pivot"></table></div>
+    </section>
+  </div>
 
-            const clampedFill = Math.min(total, 100);
-            fill.style.width = clampedFill + '%';
-            num.textContent = total.toFixed(1) + '% / 100%';
+  <!-- Panel 11: actualizar datos JSON -->
+  <section class="cyber-panel">
+    <div class="panel-title"><i class="fa-solid fa-database"></i> 11. Actualizar datos (tu plan de enero)</div>
+    <p class="phint">Descarga el JSON, agrega los cierres nuevos y súbelo: la terminal se recalcula sola, sin tocar código.</p>
+    <div class="controls">
+      <button type="button" id="dlData" class="ghost"><i class="fa-solid fa-download"></i> Descargar datos (JSON)</button>
+      <label style="cursor:pointer;font-size:.7rem;color:var(--neon-cyan);text-transform:uppercase;letter-spacing:1px;border:1px solid rgba(0,243,255,.5);border-radius:4px;padding:8px 14px;font-family:'Orbitron',sans-serif">
+        <i class="fa-solid fa-upload"></i> Cargar datos
+        <input type="file" id="upData" accept=".json,application/json" class="hidden">
+      </label>
+      <span id="dataMsg" class="phint" style="margin:0"></span>
+    </div>
+  </section>
 
-            if (Math.abs(total - 100) < 0.1) {
-                fill.style.backgroundColor = 'var(--neon-green)';
-                fill.style.boxShadow = '0 0 10px var(--neon-green)';
-                msg.className = 'weight-valid';
-                msg.innerHTML = '<i class="fa-solid fa-circle-check"></i> Pesos válidos. Simulando compra...';
-                return true;
-            } else {
-                fill.style.backgroundColor = 'var(--neon-red)';
-                fill.style.boxShadow = '0 0 10px var(--neon-red)';
-                msg.className = 'weight-invalid';
-                msg.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> La suma de pesos debe ser exactamente 100%';
-                return false;
-            }
-        }
+  <!-- Texto legal -->
+  <p class="foot">
+    Ejercicio retrospectivo: muestra lo que pasó, no lo que va a pasar, y no es una recomendación de inversión.
+    Hagen Academy es una academia de formación, no una plataforma de inversión.
+    Se asumen acciones fraccionadas; confirma con tu broker. Los pesos los decide cada usuario — eso es la lección.
+  </p>
+</div>
 
-        // SIMULATION ENGINE
-        function runSimulation() {
-            const isValid = validateWeights();
-            const startIdx = parseInt(document.getElementById('startDate').value) || 0;
-            const capital = parseFloat(document.getElementById('capital').value) || 1000;
-            const benchmarkTicker = document.getElementById('benchmark').value;
+<!-- Footer global -->
+<footer class="max-w-7xl mx-auto w-full mt-6 bg-cyber-card border border-cyber-border rounded-xl p-3 text-center text-xs text-cyber-text">
+  HagenAcademy Terminal Pro · Ejercicio retrospectivo: muestra lo que pasó, no lo que va a pasar, y no es una recomendación de inversión.
+  Paneles con insignia <b style="color:#ffb020">DEMO</b> usan datos de ejemplo — la conexión a APIs en vivo (precio, noticias, sentimiento, analistas) se integra después.
+  Se asumen acciones fraccionadas; confirma impuestos y retenciones con tu broker o contador.
+</footer>
 
-            const activeDates = HISTORICAL_DATES.slice(startIdx);
-            const numPoints = activeDates.length;
+<script>
+/* ============================================================
+   CONFIGURACIÓN GLOBAL DE CHART.JS
+   ============================================================ */
+if (window.Chart) {
+  Chart.defaults.font.family = "'JetBrains Mono', monospace";
+  Chart.defaults.color = '#94a3b8';
+}
 
-            if (numPoints === 0) return;
+/* ============================================================
+   DATA: precios de cierre reales (Yahoo Finance, 1-jun → 20-oct-2026)
+   Estructura por ticker:
+     - tipo:   "Acción" o "ETF"
+     - dates:  array de fechas ISO (YYYY-MM-DD)
+     - closes: array de precios de cierre diarios
+   ============================================================ */
+const DATA = {
+  VOO: {
+    tipo: "ETF",
+    dates: [
+      "2026-06-01", "2026-06-02", "2026-06-03", "2026-06-04", "2026-06-05",
+      "2026-06-08", "2026-06-09", "2026-06-10", "2026-06-11", "2026-06-12",
+      "2026-06-15", "2026-06-16", "2026-06-17", "2026-06-18", "2026-06-22",
+      "2026-06-23", "2026-06-24", "2026-06-25", "2026-06-26", "2026-06-29",
+      "2026-06-30", "2026-07-01", "2026-07-02", "2026-07-06", "2026-07-07",
+      "2026-07-08", "2026-07-09", "2026-07-10", "2026-07-13", "2026-07-14",
+      "2026-07-15", "2026-07-16", "2026-07-17", "2026-07-20", "2026-07-21",
+      "2026-07-22", "2026-07-23", "2026-07-24", "2026-07-27", "2026-07-28",
+      "2026-07-29", "2026-07-30", "2026-07-31", "2026-08-03", "2026-08-04",
+      "2026-08-05", "2026-08-06", "2026-08-07", "2026-08-10", "2026-08-11",
+      "2026-08-12", "2026-08-13", "2026-08-14", "2026-08-17", "2026-08-18",
+      "2026-08-19", "2026-08-20", "2026-08-21", "2026-08-24", "2026-08-25",
+      "2026-08-26", "2026-08-27", "2026-08-28", "2026-08-31", "2026-09-01",
+      "2026-09-02", "2026-09-03", "2026-09-04", "2026-09-08", "2026-09-09",
+      "2026-09-10", "2026-09-11", "2026-09-14", "2026-09-15", "2026-09-16",
+      "2026-09-17", "2026-09-18", "2026-09-21", "2026-09-22", "2026-09-23",
+      "2026-09-24", "2026-09-25", "2026-09-28", "2026-09-29", "2026-09-30",
+      "2026-10-01", "2026-10-02", "2026-10-05", "2026-10-06", "2026-10-07",
+      "2026-10-08", "2026-10-09", "2026-10-12", "2026-10-13", "2026-10-14",
+      "2026-10-15", "2026-10-16", "2026-10-19", "2026-10-20"
+    ],
+    closes: [
+      693.49, 694.45, 689.57, 692.26, 674.30,
+      675.97, 674.00, 663.41, 674.53, 678.23,
+      690.04, 685.98, 677.69, 684.35, 682.35,
+      672.65, 672.00, 672.02, 668.54, 679.26,
+      685.05, 683.70, 683.08, 688.85, 685.32,
+      683.50, 688.92, 692.08, 686.73, 689.33,
+      692.02, 688.37, 681.42, 680.46, 686.11,
+      685.27, 676.87, 677.40, 677.57, 679.21,
+      668.91, 680.04, 684.89, 694.61, 707.16,
+      705.79, 704.59, 708.89, 708.83, 706.60,
+      708.35, 713.12, 711.78, 708.45, 703.59,
+      705.10, 699.21, 701.91, 700.03, 702.21,
+      702.39, 706.93, 705.43, 703.08, 698.48,
+      701.61, 708.90, 706.19, 702.26, 699.07,
+      694.86, 700.76, 697.51, 694.41, 691.46,
+      699.23, 699.98, 710.95, 710.95, 705.79,
+      705.18, 708.97, 703.61, 702.46, 700.86,
+      702.35, 707.54, 712.32, 716.20, 714.34,
+      711.28, 715.59, 715.13, 715.20, 707.43,
+      709.43, 701.61, 704.60, 706.80
+    ]
+  },
 
-            // Compute portfolio curve
-            let portfolioCurve = new Array(numPoints).fill(0);
-            let breakdownData = [];
+  QQQ: {
+    tipo: "ETF",
+    dates: [
+      "2026-06-01", "2026-06-02", "2026-06-03", "2026-06-04", "2026-06-05",
+      "2026-06-08", "2026-06-09", "2026-06-10", "2026-06-11", "2026-06-12",
+      "2026-06-15", "2026-06-16", "2026-06-17", "2026-06-18", "2026-06-22",
+      "2026-06-23", "2026-06-24", "2026-06-25", "2026-06-26", "2026-06-29",
+      "2026-06-30", "2026-07-01", "2026-07-02", "2026-07-06", "2026-07-07",
+      "2026-07-08", "2026-07-09", "2026-07-10", "2026-07-13", "2026-07-14",
+      "2026-07-15", "2026-07-16", "2026-07-17", "2026-07-20", "2026-07-21",
+      "2026-07-22", "2026-07-23", "2026-07-24", "2026-07-27", "2026-07-28",
+      "2026-07-29", "2026-07-30", "2026-07-31", "2026-08-03", "2026-08-04",
+      "2026-08-05", "2026-08-06", "2026-08-07", "2026-08-10", "2026-08-11",
+      "2026-08-12", "2026-08-13", "2026-08-14", "2026-08-17", "2026-08-18",
+      "2026-08-19", "2026-08-20", "2026-08-21", "2026-08-24", "2026-08-25",
+      "2026-08-26", "2026-08-27", "2026-08-28", "2026-08-31", "2026-09-01",
+      "2026-09-02", "2026-09-03", "2026-09-04", "2026-09-08", "2026-09-09",
+      "2026-09-10", "2026-09-11", "2026-09-14", "2026-09-15", "2026-09-16",
+      "2026-09-17", "2026-09-18", "2026-09-21", "2026-09-22", "2026-09-23",
+      "2026-09-24", "2026-09-25", "2026-09-28", "2026-09-29", "2026-09-30",
+      "2026-10-01", "2026-10-02", "2026-10-05", "2026-10-06", "2026-10-07",
+      "2026-10-08", "2026-10-09", "2026-10-12", "2026-10-13", "2026-10-14",
+      "2026-10-15", "2026-10-16", "2026-10-19", "2026-10-20"
+    ],
+    closes: [
+      741.15, 744.57, 742.62, 739.03, 703.55,
+      714.54, 706.32, 692.21, 715.59, 719.80,
+      742.41, 728.30, 720.97, 739.04, 737.18,
+      712.91, 709.88, 715.63, 705.78, 723.33,
+      735.63, 724.42, 711.86, 722.07, 708.69,
+      710.70, 722.53, 724.75, 711.00, 718.94,
+      716.99, 705.21, 694.61, 695.34, 708.23,
+      704.62, 691.24, 683.52, 681.41, 674.79,
+      661.04, 682.84, 687.27, 699.34, 723.10,
+      716.55, 713.91, 722.28, 720.12, 717.70,
+      722.95, 731.31, 730.31, 729.11, 716.76,
+      715.33, 710.19, 712.70, 705.58, 709.98,
+      710.63, 720.36, 715.68, 716.01, 706.90,
+      708.50, 716.92, 718.21, 717.61, 715.56,
+      707.95, 714.14, 708.44, 703.81, 703.99,
+      716.17, 720.70, 741.47, 747.46, 741.21,
+      741.10, 744.50, 736.53, 737.93, 739.77,
+      742.03, 749.58, 756.20, 759.66, 757.73,
+      747.58, 751.27, 746.04, 743.57, 728.95,
+      728.00, 709.80, 718.36, 717.63
+    ]
+  },
 
-            portfolioRows.forEach(row => {
-                const prices = TICKER_PRICES[row.ticker] || TICKER_PRICES["VOO"];
-                const entryPrice = prices[startIdx];
-                const finalPrice = prices[prices.length - 1];
-                const returnPct = ((finalPrice - entryPrice) / entryPrice);
-                
-                const allocatedCapital = capital * (row.weight / 100);
+  VXUS: {
+    tipo: "ETF",
+    dates: [
+      "2026-06-01", "2026-06-02", "2026-06-03", "2026-06-04", "2026-06-05",
+      "2026-06-08", "2026-06-09", "2026-06-10", "2026-06-11", "2026-06-12",
+      "2026-06-15", "2026-06-16", "2026-06-17", "2026-06-18", "2026-06-22",
+      "2026-06-23", "2026-06-24", "2026-06-25", "2026-06-26", "2026-06-29",
+      "2026-06-30", "2026-07-01", "2026-07-02", "2026-07-06", "2026-07-07",
+      "2026-07-08", "2026-07-09", "2026-07-10", "2026-07-13", "2026-07-14",
+      "2026-07-15", "2026-07-16", "2026-07-17", "2026-07-20", "2026-07-21",
+      "2026-07-22", "2026-07-23", "2026-07-24", "2026-07-27", "2026-07-28",
+      "2026-07-29", "2026-07-30", "2026-07-31", "2026-08-03", "2026-08-04",
+      "2026-08-05", "2026-08-06", "2026-08-07", "2026-08-10", "2026-08-11",
+      "2026-08-12", "2026-08-13", "2026-08-14", "2026-08-17", "2026-08-18",
+      "2026-08-19", "2026-08-20", "2026-08-21", "2026-08-24", "2026-08-25",
+      "2026-08-26", "2026-08-27", "2026-08-28", "2026-08-31", "2026-09-01",
+      "2026-09-02", "2026-09-03", "2026-09-04", "2026-09-08", "2026-09-09",
+      "2026-09-10", "2026-09-11", "2026-09-14", "2026-09-15", "2026-09-16",
+      "2026-09-17", "2026-09-18", "2026-09-21", "2026-09-22", "2026-09-23",
+      "2026-09-24", "2026-09-25", "2026-09-28", "2026-09-29", "2026-09-30",
+      "2026-10-01", "2026-10-02", "2026-10-05", "2026-10-06", "2026-10-07",
+      "2026-10-08", "2026-10-09", "2026-10-12", "2026-10-13", "2026-10-14",
+      "2026-10-15", "2026-10-16", "2026-10-19", "2026-10-20"
+    ],
+    closes: [
+      85.77, 86.41, 85.56, 85.71, 82.51,
+      83.21, 83.29, 82.07, 84.80, 85.14,
+      86.43, 86.09, 85.61, 86.61, 86.90,
+      84.26, 84.19, 84.93, 84.33, 84.78,
+      85.34, 84.38, 84.69, 86.01, 84.50,
+      84.29, 84.75, 85.19, 83.63, 84.51,
+      84.84, 83.91, 83.22, 82.92, 84.30,
+      84.31, 83.47, 83.25, 83.64, 83.10,
+      82.24, 84.62, 84.44, 84.87, 86.29,
+      86.35, 86.16, 87.05, 86.67, 86.76,
+      87.38, 87.56, 87.54, 87.71, 86.28,
+      86.81, 86.87, 87.55, 87.04, 87.96,
+      87.66, 87.77, 87.36, 87.16, 86.55,
+      87.00, 87.81, 88.25, 87.92, 87.25,
+      86.12, 86.98, 85.88, 85.54, 85.26,
+      86.34, 85.88, 87.15, 87.49, 85.92,
+      85.59, 86.35, 85.75, 85.52, 84.96,
+      84.46, 85.43, 85.85, 85.80, 84.79,
+      84.10, 84.82, 84.44, 84.54, 83.58,
+      83.84, 83.43, 83.29, 83.74
+    ]
+  },
 
-                // Add curve values
-                for (let i = 0; i < numPoints; i++) {
-                    const priceAtStep = prices[startIdx + i];
-                    const assetValAtStep = allocatedCapital * (priceAtStep / entryPrice);
-                    portfolioCurve[i] += assetValAtStep;
-                }
+  META: {
+    tipo: "Acción",
+    dates: [
+      "2026-06-01", "2026-06-02", "2026-06-03", "2026-06-04", "2026-06-05",
+      "2026-06-08", "2026-06-09", "2026-06-10", "2026-06-11", "2026-06-12",
+      "2026-06-15", "2026-06-16", "2026-06-17", "2026-06-18", "2026-06-22",
+      "2026-06-23", "2026-06-24", "2026-06-25", "2026-06-26", "2026-06-29",
+      "2026-06-30", "2026-07-01", "2026-07-02", "2026-07-06", "2026-07-07",
+      "2026-07-08", "2026-07-09", "2026-07-10", "2026-07-13", "2026-07-14",
+      "2026-07-15", "2026-07-16", "2026-07-17", "2026-07-20", "2026-07-21",
+      "2026-07-22", "2026-07-23", "2026-07-24", "2026-07-27", "2026-07-28",
+      "2026-07-29", "2026-07-30", "2026-07-31", "2026-08-03", "2026-08-04",
+      "2026-08-05", "2026-08-06", "2026-08-07", "2026-08-10", "2026-08-11",
+      "2026-08-12", "2026-08-13", "2026-08-14", "2026-08-17", "2026-08-18",
+      "2026-08-19", "2026-08-20", "2026-08-21", "2026-08-24", "2026-08-25",
+      "2026-08-26", "2026-08-27", "2026-08-28", "2026-08-31", "2026-09-01",
+      "2026-09-02", "2026-09-03", "2026-09-04", "2026-09-08", "2026-09-09",
+      "2026-09-10", "2026-09-11", "2026-09-14", "2026-09-15", "2026-09-16",
+      "2026-09-17", "2026-09-18", "2026-09-21", "2026-09-22", "2026-09-23",
+      "2026-09-24", "2026-09-25", "2026-09-28", "2026-09-29", "2026-09-30",
+      "2026-10-01", "2026-10-02", "2026-10-05", "2026-10-06", "2026-10-07",
+      "2026-10-08", "2026-10-09", "2026-10-12", "2026-10-13", "2026-10-14",
+      "2026-10-15", "2026-10-16", "2026-10-19", "2026-10-20"
+    ],
+    closes: [
+      599.44, 596.61, 621.91, 626.49, 591.98,
+      584.39, 583.59, 570.00, 567.46, 566.01,
+      593.01, 599.74, 567.13, 576.76, 563.41,
+      561.76, 557.23, 542.44, 549.82, 562.16,
+      562.85, 612.43, 582.44, 599.82, 615.09,
+      602.64, 630.98, 668.68, 656.21, 660.52,
+      680.77, 664.02, 645.50, 645.34, 643.30,
+      626.68, 605.62, 594.72, 593.40, 592.94,
+      585.15, 538.60, 556.27, 589.77, 587.48,
+      588.31, 589.43, 591.63, 594.45, 598.65,
+      578.39, 594.50, 589.38, 568.52, 543.24,
+      545.60, 545.40, 549.47, 558.58, 569.60,
+      575.69, 570.65, 577.56, 571.89, 578.08,
+      592.38, 610.20, 616.28, 613.00, 653.17,
+      643.87, 647.52, 665.08, 669.71, 672.78,
+      681.77, 665.23, 741.25, 736.60, 744.10,
+      777.59, 751.66, 715.62, 738.79, 725.18,
+      725.93, 728.08, 741.90, 738.88, 721.31,
+      720.89, 718.67, 742.96, 762.50, 737.54,
+      736.72, 709.33, 705.44, 694.25
+    ]
+  },
 
-                breakdownData.push({
-                    ticker: row.ticker,
-                    weight: row.weight,
-                    entryPrice: entryPrice,
-                    finalPrice: finalPrice,
-                    returnPct: returnPct * 100
-                });
-            });
+  AAPL: {
+    tipo: "Acción",
+    dates: [
+      "2026-06-01", "2026-06-02", "2026-06-03", "2026-06-04", "2026-06-05",
+      "2026-06-08", "2026-06-09", "2026-06-10", "2026-06-11", "2026-06-12",
+      "2026-06-15", "2026-06-16", "2026-06-17", "2026-06-18", "2026-06-22",
+      "2026-06-23", "2026-06-24", "2026-06-25", "2026-06-26", "2026-06-29",
+      "2026-06-30", "2026-07-01", "2026-07-02", "2026-07-06", "2026-07-07",
+      "2026-07-08", "2026-07-09", "2026-07-10", "2026-07-13", "2026-07-14",
+      "2026-07-15", "2026-07-16", "2026-07-17", "2026-07-20", "2026-07-21",
+      "2026-07-22", "2026-07-23", "2026-07-24", "2026-07-27", "2026-07-28",
+      "2026-07-29", "2026-07-30", "2026-07-31", "2026-08-03", "2026-08-04",
+      "2026-08-05", "2026-08-06", "2026-08-07", "2026-08-10", "2026-08-11",
+      "2026-08-12", "2026-08-13", "2026-08-14", "2026-08-17", "2026-08-18",
+      "2026-08-19", "2026-08-20", "2026-08-21", "2026-08-24", "2026-08-25",
+      "2026-08-26", "2026-08-27", "2026-08-28", "2026-08-31", "2026-09-01",
+      "2026-09-02", "2026-09-03", "2026-09-04", "2026-09-08", "2026-09-09",
+      "2026-09-10", "2026-09-11", "2026-09-14", "2026-09-15", "2026-09-16",
+      "2026-09-17", "2026-09-18", "2026-09-21", "2026-09-22", "2026-09-23",
+      "2026-09-24", "2026-09-25", "2026-09-28", "2026-09-29", "2026-09-30",
+      "2026-10-01", "2026-10-02", "2026-10-05", "2026-10-06", "2026-10-07",
+      "2026-10-08", "2026-10-09", "2026-10-12", "2026-10-13", "2026-10-14",
+      "2026-10-15", "2026-10-16", "2026-10-19", "2026-10-20"
+    ],
+    closes: [
+      306.05, 314.93, 309.99, 310.96, 307.08,
+      301.28, 290.30, 291.33, 295.38, 290.88,
+      296.16, 298.98, 295.69, 297.75, 296.75,
+      294.05, 292.83, 274.91, 283.54, 281.50,
+      289.11, 294.13, 308.36, 312.39, 310.39,
+      313.12, 315.95, 315.05, 317.04, 314.59,
+      327.22, 332.97, 333.45, 326.31, 327.46,
+      325.61, 321.38, 332.73, 336.62, 339.79,
+      337.90, 333.14, 308.64, 303.16, 309.11,
+      310.73, 312.14, 313.06, 308.26, 304.91,
+      302.25, 305.26, 305.93, 305.59, 310.03,
+      316.83, 311.30, 309.35, 310.34, 309.90,
+      313.45, 314.58, 319.70, 316.85, 325.13,
+      324.96, 328.21, 319.97, 316.22, 315.34,
+      326.57, 332.27, 333.08, 331.34, 332.41,
+      337.00, 336.13, 338.98, 339.75, 337.02,
+      335.92, 341.07, 338.40, 329.40, 333.02,
+      330.32, 333.69, 332.89, 333.63, 336.67,
+      340.42, 336.64, 340.97, 341.27, 342.96,
+      342.00, 343.46, 342.94, 339.50
+    ]
+  },
 
-            // Benchmark Curve if selected
-            let benchmarkCurve = null;
-            if (benchmarkTicker !== "NONE" && TICKER_PRICES[benchmarkTicker]) {
-                const bPrices = TICKER_PRICES[benchmarkTicker];
-                const bEntry = bPrices[startIdx];
-                benchmarkCurve = activeDates.map((_, i) => capital * (bPrices[startIdx + i] / bEntry));
-            }
+  NVDA: {
+    tipo: "Acción",
+    dates: [
+      "2026-06-01", "2026-06-02", "2026-06-03", "2026-06-04", "2026-06-05",
+      "2026-06-08", "2026-06-09", "2026-06-10", "2026-06-11", "2026-06-12",
+      "2026-06-15", "2026-06-16", "2026-06-17", "2026-06-18", "2026-06-22",
+      "2026-06-23", "2026-06-24", "2026-06-25", "2026-06-26", "2026-06-29",
+      "2026-06-30", "2026-07-01", "2026-07-02", "2026-07-06", "2026-07-07",
+      "2026-07-08", "2026-07-09", "2026-07-10", "2026-07-13", "2026-07-14",
+      "2026-07-15", "2026-07-16", "2026-07-17", "2026-07-20", "2026-07-21",
+      "2026-07-22", "2026-07-23", "2026-07-24", "2026-07-27", "2026-07-28",
+      "2026-07-29", "2026-07-30", "2026-07-31", "2026-08-03", "2026-08-04",
+      "2026-08-05", "2026-08-06", "2026-08-07", "2026-08-10", "2026-08-11",
+      "2026-08-12", "2026-08-13", "2026-08-14", "2026-08-17", "2026-08-18",
+      "2026-08-19", "2026-08-20", "2026-08-21", "2026-08-24", "2026-08-25",
+      "2026-08-26", "2026-08-27", "2026-08-28", "2026-08-31", "2026-09-01",
+      "2026-09-02", "2026-09-03", "2026-09-04", "2026-09-08", "2026-09-09",
+      "2026-09-10", "2026-09-11", "2026-09-14", "2026-09-15", "2026-09-16",
+      "2026-09-17", "2026-09-18", "2026-09-21", "2026-09-22", "2026-09-23",
+      "2026-09-24", "2026-09-25", "2026-09-28", "2026-09-29", "2026-09-30",
+      "2026-10-01", "2026-10-02", "2026-10-05", "2026-10-06", "2026-10-07",
+      "2026-10-08", "2026-10-09", "2026-10-12", "2026-10-13", "2026-10-14",
+      "2026-10-15", "2026-10-16", "2026-10-19", "2026-10-20"
+    ],
+    closes: [
+      223.85, 222.31, 214.26, 218.42, 204.87,
+      208.41, 207.96, 200.20, 204.64, 204.96,
+      212.21, 207.18, 204.42, 210.45, 208.42,
+      199.82, 198.78, 195.52, 192.31, 194.75,
+      199.87, 197.36, 194.61, 195.33, 196.71,
+      203.89, 202.55, 210.72, 203.30, 211.56,
+      212.26, 207.17, 202.58, 203.05, 207.06,
+      211.82, 208.53, 206.61, 196.29, 196.79,
+      189.80, 194.82, 200.53, 206.41, 211.70,
+      218.97, 218.75, 223.71, 217.31, 217.26,
+      223.84, 225.05, 224.91, 224.76, 219.49,
+      217.32, 216.61, 214.48, 208.25, 212.81,
+      209.43, 227.73, 217.31, 220.53, 217.20,
+      224.16, 228.19, 230.10, 225.48, 223.42,
+      218.36, 218.29, 210.96, 212.17, 213.90,
+      219.34, 222.27, 227.38, 228.87, 225.51,
+      224.58, 225.07, 228.86, 227.21, 228.38,
+      230.86, 233.95, 238.90, 239.24, 237.47,
+      230.48, 229.28, 226.32, 228.52, 221.30,
+      217.23, 214.13, 217.09, 216.47
+    ]
+  },
 
-            // Metrics
-            const finalValue = portfolioCurve[numPoints - 1];
-            const totalReturn = ((finalValue - capital) / capital) * 100;
-            
-            // Max Drawdown calculation
-            let peak = portfolioCurve[0];
-            let maxDD = 0;
-            portfolioCurve.forEach(val => {
-                if (val > peak) peak = val;
-                const dd = (val - peak) / peak;
-                if (dd < maxDD) maxDD = dd;
-            });
+  PLTR: {
+    tipo: "Acción",
+    dates: [
+      "2026-06-01", "2026-06-02", "2026-06-03", "2026-06-04", "2026-06-05",
+      "2026-06-08", "2026-06-09", "2026-06-10", "2026-06-11", "2026-06-12",
+      "2026-06-15", "2026-06-16", "2026-06-17", "2026-06-18", "2026-06-22",
+      "2026-06-23", "2026-06-24", "2026-06-25", "2026-06-26", "2026-06-29",
+      "2026-06-30", "2026-07-01", "2026-07-02", "2026-07-06", "2026-07-07",
+      "2026-07-08", "2026-07-09", "2026-07-10", "2026-07-13", "2026-07-14",
+      "2026-07-15", "2026-07-16", "2026-07-17", "2026-07-20", "2026-07-21",
+      "2026-07-22", "2026-07-23", "2026-07-24", "2026-07-27", "2026-07-28",
+      "2026-07-29", "2026-07-30", "2026-07-31", "2026-08-03", "2026-08-04",
+      "2026-08-05", "2026-08-06", "2026-08-07", "2026-08-10", "2026-08-11",
+      "2026-08-12", "2026-08-13", "2026-08-14", "2026-08-17", "2026-08-18",
+      "2026-08-19", "2026-08-20", "2026-08-21", "2026-08-24", "2026-08-25",
+      "2026-08-26", "2026-08-27", "2026-08-28", "2026-08-31", "2026-09-01",
+      "2026-09-02", "2026-09-03", "2026-09-04", "2026-09-08", "2026-09-09",
+      "2026-09-10", "2026-09-11", "2026-09-14", "2026-09-15", "2026-09-16",
+      "2026-09-17", "2026-09-18", "2026-09-21", "2026-09-22", "2026-09-23",
+      "2026-09-24", "2026-09-25", "2026-09-28", "2026-09-29", "2026-09-30",
+      "2026-10-01", "2026-10-02", "2026-10-05", "2026-10-06", "2026-10-07",
+      "2026-10-08", "2026-10-09", "2026-10-12", "2026-10-13", "2026-10-14",
+      "2026-10-15", "2026-10-16", "2026-10-19", "2026-10-20"
+    ],
+    closes: [
+      160.65, 152.17, 142.20, 141.70, 135.53,
+      136.47, 132.07, 130.21, 131.08, 127.99,
+      134.71, 133.25, 130.63, 128.47, 119.50,
+      116.70, 113.50, 107.27, 112.93, 115.70,
+      116.67, 125.73, 129.30, 132.54, 134.37,
+      132.22, 129.04, 126.79, 130.04, 133.72,
+      133.76, 134.44, 132.38, 134.85, 132.66,
+      124.57, 123.37, 122.92, 131.53, 123.53,
+      123.00, 122.26, 123.06, 125.65, 162.66,
+      158.43, 155.92, 172.01, 175.23, 174.94,
+      171.04, 179.01, 174.04, 172.55, 171.54,
+      175.19, 173.96, 179.94, 175.89, 172.73,
+      177.50, 185.93, 186.29, 186.38, 179.92,
+      169.46, 182.53, 174.33, 170.30, 169.53,
+      165.86, 167.23, 173.31, 172.56, 174.34,
+      176.24, 177.64, 183.09, 184.99, 191.79,
+      192.59, 189.67, 187.48, 186.97, 187.05,
+      190.04, 188.75, 189.40, 192.07, 194.12,
+      198.78, 209.05, 209.00, 208.67, 200.97,
+      200.50, 186.03, 194.15, 192.60
+    ]
+  },
 
-            // Update DOM Metrics
-            const lblFinal = document.getElementById('lblFinalVal');
-            const lblRet = document.getElementById('lblTotalRet');
-            const lblDD = document.getElementById('lblMaxDD');
+  SNAP: {
+    tipo: "Acción",
+    dates: [
+      "2026-06-01", "2026-06-02", "2026-06-03", "2026-06-04", "2026-06-05",
+      "2026-06-08", "2026-06-09", "2026-06-10", "2026-06-11", "2026-06-12",
+      "2026-06-15", "2026-06-16", "2026-06-17", "2026-06-18", "2026-06-22",
+      "2026-06-23", "2026-06-24", "2026-06-25", "2026-06-26", "2026-06-29",
+      "2026-06-30", "2026-07-01", "2026-07-02", "2026-07-06", "2026-07-07",
+      "2026-07-08", "2026-07-09", "2026-07-10", "2026-07-13", "2026-07-14",
+      "2026-07-15", "2026-07-16", "2026-07-17", "2026-07-20", "2026-07-21",
+      "2026-07-22", "2026-07-23", "2026-07-24", "2026-07-27", "2026-07-28",
+      "2026-07-29", "2026-07-30", "2026-07-31", "2026-08-03", "2026-08-04",
+      "2026-08-05", "2026-08-06", "2026-08-07", "2026-08-10", "2026-08-11",
+      "2026-08-12", "2026-08-13", "2026-08-14", "2026-08-17", "2026-08-18",
+      "2026-08-19", "2026-08-20", "2026-08-21", "2026-08-24", "2026-08-25",
+      "2026-08-26", "2026-08-27", "2026-08-28", "2026-08-31", "2026-09-01",
+      "2026-09-02", "2026-09-03", "2026-09-04", "2026-09-08", "2026-09-09",
+      "2026-09-10", "2026-09-11", "2026-09-14", "2026-09-15", "2026-09-16",
+      "2026-09-17", "2026-09-18", "2026-09-21", "2026-09-22", "2026-09-23",
+      "2026-09-24", "2026-09-25", "2026-09-28", "2026-09-29", "2026-09-30",
+      "2026-10-01", "2026-10-02", "2026-10-05", "2026-10-06", "2026-10-07",
+      "2026-10-08", "2026-10-09", "2026-10-12", "2026-10-13", "2026-10-14",
+      "2026-10-15", "2026-10-16", "2026-10-19", "2026-10-20"
+    ],
+    closes: [
+      5.86, 5.76, 5.73, 6.07, 5.76,
+      5.65, 5.59, 5.38, 5.33, 5.26,
+      5.71, 5.16, 4.74, 4.66, 4.63,
+      4.46, 4.53, 4.34, 4.41, 4.42,
+      4.44, 4.75, 4.84, 4.75, 4.65,
+      4.63, 4.70, 4.68, 4.66, 4.68,
+      4.76, 4.69, 4.53, 4.56, 4.56,
+      4.47, 4.41, 4.35, 4.52, 4.77,
+      4.73, 4.69, 4.69, 5.04, 5.79,
+      5.33, 5.22, 5.33, 5.35, 5.51,
+      5.20, 5.30, 5.41, 5.18, 5.11,
+      5.24, 5.21, 5.24, 5.53, 5.92,
+      5.42, 5.33, 5.43, 5.55, 5.35,
+      5.59, 5.70, 5.47, 5.43, 5.31,
+      5.52, 5.68, 5.84, 5.83, 5.72,
+      5.65, 5.53, 5.70, 5.62, 5.29,
+      5.43, 5.42, 5.22, 5.34, 5.40,
+      5.65, 5.58, 5.61, 5.78, 5.81,
+      5.86, 6.23, 6.53, 6.49, 6.10,
+      6.44, 6.13, 6.27, 6.38
+    ]
+  },
 
-            lblFinal.textContent = '$' + finalValue.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
-            lblRet.textContent = (totalReturn >= 0 ? '+' : '') + totalReturn.toFixed(2) + '%';
-            lblRet.className = 'val ' + (totalReturn >= 0 ? 'green' : 'red');
-            lblDD.textContent = (maxDD * 100).toFixed(2) + '%';
+  NFLX: {
+    tipo: "Acción",
+    dates: [
+      "2026-06-01", "2026-06-02", "2026-06-03", "2026-06-04", "2026-06-05",
+      "2026-06-08", "2026-06-09", "2026-06-10", "2026-06-11", "2026-06-12",
+      "2026-06-15", "2026-06-16", "2026-06-17", "2026-06-18", "2026-06-22",
+      "2026-06-23", "2026-06-24", "2026-06-25", "2026-06-26", "2026-06-29",
+      "2026-06-30", "2026-07-01", "2026-07-02", "2026-07-06", "2026-07-07",
+      "2026-07-08", "2026-07-09", "2026-07-10", "2026-07-13", "2026-07-14",
+      "2026-07-15", "2026-07-16", "2026-07-17", "2026-07-20", "2026-07-21",
+      "2026-07-22", "2026-07-23", "2026-07-24", "2026-07-27", "2026-07-28",
+      "2026-07-29", "2026-07-30", "2026-07-31", "2026-08-03", "2026-08-04",
+      "2026-08-05", "2026-08-06", "2026-08-07", "2026-08-10", "2026-08-11",
+      "2026-08-12", "2026-08-13", "2026-08-14", "2026-08-17", "2026-08-18",
+      "2026-08-19", "2026-08-20", "2026-08-21", "2026-08-24", "2026-08-25",
+      "2026-08-26", "2026-08-27", "2026-08-28", "2026-08-31", "2026-09-01",
+      "2026-09-02", "2026-09-03", "2026-09-04", "2026-09-08", "2026-09-09",
+      "2026-09-10", "2026-09-11", "2026-09-14", "2026-09-15", "2026-09-16",
+      "2026-09-17", "2026-09-18", "2026-09-21", "2026-09-22", "2026-09-23",
+      "2026-09-24", "2026-09-25", "2026-09-28", "2026-09-29", "2026-09-30",
+      "2026-10-01", "2026-10-02", "2026-10-05", "2026-10-06", "2026-10-07",
+      "2026-10-08", "2026-10-09", "2026-10-12", "2026-10-13", "2026-10-14",
+      "2026-10-15", "2026-10-16", "2026-10-19", "2026-10-20"
+    ],
+    closes: [
+      85.85, 83.33, 81.52, 81.56, 82.18,
+      82.64, 81.41, 82.00, 81.27, 80.34,
+      81.67, 78.72, 76.96, 77.38, 72.88,
+      72.82, 71.84, 70.90, 73.81, 73.78,
+      71.40, 74.19, 77.65, 76.02, 76.18,
+      75.59, 75.47, 73.37, 73.83, 73.53,
+      73.68, 74.35, 68.95, 67.60, 68.67,
+      68.53, 68.89, 70.09, 70.40, 72.39,
+      73.63, 73.17, 71.71, 73.33, 73.57,
+      74.20, 73.69, 74.14, 76.29, 74.79,
+      74.21, 78.24, 78.16, 76.02, 77.77,
+      80.22, 80.14, 79.59, 80.01, 82.23,
+      81.46, 79.84, 81.72, 81.05, 80.81,
+      82.73, 82.67, 78.25, 76.77, 76.03,
+      76.01, 77.40, 80.32, 77.90, 76.41,
+      75.31, 71.79, 73.36, 72.16, 71.36,
+      71.72, 71.15, 69.23, 70.30, 69.58,
+      67.85, 67.06, 67.50, 68.69, 69.70,
+      71.57, 70.30, 70.61, 70.46, 70.57,
+      72.61, 70.53, 69.85, 68.69
+    ]
+  },
 
-            // Render Table & Chart
-            renderBreakdownTable(breakdownData);
-            renderChart(activeDates, portfolioCurve, benchmarkCurve, benchmarkTicker);
-        }
+  MSFT: {
+    tipo: "Acción",
+    dates: [
+      "2026-06-01", "2026-06-02", "2026-06-03", "2026-06-04", "2026-06-05",
+      "2026-06-08", "2026-06-09", "2026-06-10", "2026-06-11", "2026-06-12",
+      "2026-06-15", "2026-06-16", "2026-06-17", "2026-06-18", "2026-06-22",
+      "2026-06-23", "2026-06-24", "2026-06-25", "2026-06-26", "2026-06-29",
+      "2026-06-30", "2026-07-01", "2026-07-02", "2026-07-06", "2026-07-07",
+      "2026-07-08", "2026-07-09", "2026-07-10", "2026-07-13", "2026-07-14",
+      "2026-07-15", "2026-07-16", "2026-07-17", "2026-07-20", "2026-07-21",
+      "2026-07-22", "2026-07-23", "2026-07-24", "2026-07-27", "2026-07-28",
+      "2026-07-29", "2026-07-30", "2026-07-31", "2026-08-03", "2026-08-04",
+      "2026-08-05", "2026-08-06", "2026-08-07", "2026-08-10", "2026-08-11",
+      "2026-08-12", "2026-08-13", "2026-08-14", "2026-08-17", "2026-08-18",
+      "2026-08-19", "2026-08-20", "2026-08-21", "2026-08-24", "2026-08-25",
+      "2026-08-26", "2026-08-27", "2026-08-28", "2026-08-31", "2026-09-01",
+      "2026-09-02", "2026-09-03", "2026-09-04", "2026-09-08", "2026-09-09",
+      "2026-09-10", "2026-09-11", "2026-09-14", "2026-09-15", "2026-09-16",
+      "2026-09-17", "2026-09-18", "2026-09-21", "2026-09-22", "2026-09-23",
+      "2026-09-24", "2026-09-25", "2026-09-28", "2026-09-29", "2026-09-30",
+      "2026-10-01", "2026-10-02", "2026-10-05", "2026-10-06", "2026-10-07",
+      "2026-10-08", "2026-10-09", "2026-10-12", "2026-10-13", "2026-10-14",
+      "2026-10-15", "2026-10-16", "2026-10-19", "2026-10-20"
+    ],
+    closes: [
+      459.65, 440.48, 426.54, 427.25, 415.89,
+      410.97, 402.65, 396.61, 389.61, 390.01,
+      399.01, 393.09, 378.20, 378.69, 366.65,
+      373.24, 364.77, 352.17, 372.27, 367.88,
+      372.32, 383.56, 389.76, 386.01, 388.11,
+      382.62, 383.64, 384.38, 390.26, 384.21,
+      394.89, 400.35, 393.08, 401.53, 397.00,
+      389.61, 380.86, 380.98, 388.37, 392.61,
+      389.81, 450.25, 463.85, 486.73, 491.88,
+      486.54, 498.92, 499.05, 505.11, 502.86,
+      491.50, 495.95, 494.47, 479.45, 480.73,
+      483.40, 481.15, 483.24, 487.31, 491.71,
+      496.37, 505.06, 513.53, 507.29, 501.02,
+      496.82, 510.12, 499.70, 493.95, 491.65,
+      492.44, 495.63, 505.41, 497.12, 490.30,
+      497.75, 493.78, 501.61, 498.00, 500.59,
+      497.93, 516.17, 509.22, 508.96, 512.90,
+      512.80, 517.53, 525.18, 529.30, 529.76,
+      522.61, 535.07, 541.15, 543.45, 533.69,
+      539.44, 529.05, 533.52, 531.87
+    ]
+  },
 
-        // RENDER BREAKDOWN TABLE
-        function renderBreakdownTable(data) {
-            const tbody = document.getElementById('breakdownTbody');
-            tbody.innerHTML = '';
+  TSLA: {
+    tipo: "Acción",
+    dates: [
+      "2026-06-01", "2026-06-02", "2026-06-03", "2026-06-04", "2026-06-05",
+      "2026-06-08", "2026-06-09", "2026-06-10", "2026-06-11", "2026-06-12",
+      "2026-06-15", "2026-06-16", "2026-06-17", "2026-06-18", "2026-06-22",
+      "2026-06-23", "2026-06-24", "2026-06-25", "2026-06-26", "2026-06-29",
+      "2026-06-30", "2026-07-01", "2026-07-02", "2026-07-06", "2026-07-07",
+      "2026-07-08", "2026-07-09", "2026-07-10", "2026-07-13", "2026-07-14",
+      "2026-07-15", "2026-07-16", "2026-07-17", "2026-07-20", "2026-07-21",
+      "2026-07-22", "2026-07-23", "2026-07-24", "2026-07-27", "2026-07-28",
+      "2026-07-29", "2026-07-30", "2026-07-31", "2026-08-03", "2026-08-04",
+      "2026-08-05", "2026-08-06", "2026-08-07", "2026-08-10", "2026-08-11",
+      "2026-08-12", "2026-08-13", "2026-08-14", "2026-08-17", "2026-08-18",
+      "2026-08-19", "2026-08-20", "2026-08-21", "2026-08-24", "2026-08-25",
+      "2026-08-26", "2026-08-27", "2026-08-28", "2026-08-31", "2026-09-01",
+      "2026-09-02", "2026-09-03", "2026-09-04", "2026-09-08", "2026-09-09",
+      "2026-09-10", "2026-09-11", "2026-09-14", "2026-09-15", "2026-09-16",
+      "2026-09-17", "2026-09-18", "2026-09-21", "2026-09-22", "2026-09-23",
+      "2026-09-24", "2026-09-25", "2026-09-28", "2026-09-29", "2026-09-30",
+      "2026-10-01", "2026-10-02", "2026-10-05", "2026-10-06", "2026-10-07",
+      "2026-10-08", "2026-10-09", "2026-10-12", "2026-10-13", "2026-10-14",
+      "2026-10-15", "2026-10-16", "2026-10-19", "2026-10-20"
+    ],
+    closes: [
+      415.88, 423.74, 423.70, 418.45, 391.00,
+      408.95, 396.68, 381.59, 399.15, 406.43,
+      411.15, 404.66, 396.38, 400.49, 405.05,
+      381.61, 375.53, 375.12, 379.71, 411.84,
+      420.60, 425.30, 393.45, 419.77, 402.90,
+      394.06, 406.55, 407.76, 394.76, 396.18,
+      394.46, 391.06, 380.84, 369.57, 378.93,
+      374.01, 319.69, 313.03, 309.22, 307.44,
+      298.32, 308.85, 311.21, 322.08, 327.35,
+      321.55, 319.53, 328.58, 330.88, 332.81,
+      327.51, 339.96, 342.27, 339.30, 336.87,
+      351.12, 345.13, 362.86, 348.95, 350.25,
+      345.82, 354.81, 348.75, 367.95, 356.09,
+      357.01, 376.37, 354.08, 368.16, 367.81,
+      363.56, 365.44, 358.97, 356.58, 358.08,
+      366.20, 364.27, 375.30, 378.90, 380.12,
+      377.94, 372.11, 357.45, 352.84, 354.81,
+      354.11, 370.59, 378.73, 380.68, 377.81,
+      375.00, 382.70, 378.03, 375.23, 367.16,
+      362.44, 354.72, 368.06, 373.71
+    ]
+  },
 
-            data.forEach(item => {
-                const tr = document.createElement('tr');
-                const isPos = item.returnPct >= 0;
-                
-                tr.innerHTML = `
-                    <td style="font-weight:bold; color: #fff;">${item.ticker}</td>
-                    <td>${item.weight.toFixed(1)}%</td>
-                    <td>$${item.entryPrice.toFixed(2)}</td>
-                    <td>$${item.finalPrice.toFixed(2)}</td>
-                    <td style="font-weight:bold; color: ${isPos ? 'var(--neon-green)' : 'var(--neon-red)'};">
-                        ${isPos ? '+' : ''}${item.returnPct.toFixed(2)}%
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
+  AVGO: {
+    tipo: "Acción",
+    dates: [
+      "2026-06-01", "2026-06-02", "2026-06-03", "2026-06-04", "2026-06-05",
+      "2026-06-08", "2026-06-09", "2026-06-10", "2026-06-11", "2026-06-12",
+      "2026-06-15", "2026-06-16", "2026-06-17", "2026-06-18", "2026-06-22",
+      "2026-06-23", "2026-06-24", "2026-06-25", "2026-06-26", "2026-06-29",
+      "2026-06-30", "2026-07-01", "2026-07-02", "2026-07-06", "2026-07-07",
+      "2026-07-08", "2026-07-09", "2026-07-10", "2026-07-13", "2026-07-14",
+      "2026-07-15", "2026-07-16", "2026-07-17", "2026-07-20", "2026-07-21",
+      "2026-07-22", "2026-07-23", "2026-07-24", "2026-07-27", "2026-07-28",
+      "2026-07-29", "2026-07-30", "2026-07-31", "2026-08-03", "2026-08-04",
+      "2026-08-05", "2026-08-06", "2026-08-07", "2026-08-10", "2026-08-11",
+      "2026-08-12", "2026-08-13", "2026-08-14", "2026-08-17", "2026-08-18",
+      "2026-08-19", "2026-08-20", "2026-08-21", "2026-08-24", "2026-08-25",
+      "2026-08-26", "2026-08-27", "2026-08-28", "2026-08-31", "2026-09-01",
+      "2026-09-02", "2026-09-03", "2026-09-04", "2026-09-08", "2026-09-09",
+      "2026-09-10", "2026-09-11", "2026-09-14", "2026-09-15", "2026-09-16",
+      "2026-09-17", "2026-09-18", "2026-09-21", "2026-09-22", "2026-09-23",
+      "2026-09-24", "2026-09-25", "2026-09-28", "2026-09-29", "2026-09-30",
+      "2026-10-01", "2026-10-02", "2026-10-05", "2026-10-06", "2026-10-07",
+      "2026-10-08", "2026-10-09", "2026-10-12", "2026-10-13", "2026-10-14",
+      "2026-10-15", "2026-10-16", "2026-10-19", "2026-10-20"
+    ],
+    closes: [
+      458.41, 479.94, 477.60, 417.49, 384.42,
+      395.25, 390.83, 370.84, 384.26, 380.77,
+      392.60, 375.43, 391.57, 409.95, 391.42,
+      379.46, 381.38, 378.22, 364.36, 371.77,
+      377.06, 368.67, 359.79, 373.22, 370.11,
+      387.98, 400.38, 399.24, 383.35, 388.40,
+      393.56, 373.77, 370.16, 377.47, 385.80,
+      396.09, 391.76, 381.23, 382.52, 380.22,
+      369.65, 387.14, 388.57, 391.52, 417.40,
+      417.52, 419.81, 426.98, 421.63, 415.32,
+      415.29, 417.06, 392.28, 391.72, 379.31,
+      361.82, 363.37, 367.78, 358.11, 356.09,
+      354.94, 370.86, 368.12, 369.67, 369.01,
+      366.57, 356.51, 357.25, 367.89, 363.72,
+      360.17, 361.33, 344.09, 338.65, 338.89,
+      346.67, 356.96, 362.66, 364.54, 354.99,
+      350.36, 352.81, 349.57, 355.10, 351.19,
+      343.64, 355.14, 362.51, 375.81, 376.51,
+      360.14, 361.54, 354.73, 357.31, 346.25,
+      344.33, 328.75, 334.59, 334.37
+    ]
+  }
+};
 
-        // RENDER CHARTJS
-        function renderChart(labels, portfolioData, benchmarkData, benchmarkTicker) {
-            const ctx = document.getElementById('cyberChart').getContext('2d');
-            
-            if (chartInstance) {
-                chartInstance.destroy();
-            }
+/* ============================================================
+   CONSTANTES DE APOYO
+   - COLORS: paleta para gráficos con múltiples activos
+   - MN: nombres de meses en español
+   - PRESETS: plantillas de portafolios predefinidas
+   ============================================================ */
+const COLORS = ["#00ff66","#00f3ff","#ff0055","#ffea00","#B48CF2","#4DD0E1","#F06292","#AED581","#FFD54F","#90A4AE","#CE93D8","#F0A04B"];
+const MN = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const PRESETS = {
+  core: [["VOO",35],["QQQ",21],["VXUS",14],["META",7.5],["AAPL",7.5],["NVDA",7.5],["PLTR",7.5]],
+  tech: [["META",25],["AAPL",25],["NVDA",25],["PLTR",25]],
+  voo:  [["VOO",100]]
+};
 
-            const datasets = [{
-                label: 'Portafolio HagenAcademy',
-                data: portfolioData,
-                borderColor: '#00ff66',
-                backgroundColor: 'rgba(0, 255, 102, 0.08)',
-                borderWidth: 3,
-                fill: true,
-                tension: 0.2,
-                pointBackgroundColor: '#00ff66',
-                pointBorderColor: '#000',
-                pointRadius: 5,
-                pointHoverRadius: 8
-            }];
+/* ============================================================
+   ESTADO DEL SIMULADOR
+   ============================================================ */
+let capital = 1000;
+let startIdx = 0;
+let group = 'M';
+let charts = {};
+let assets = PRESETS.core.map(a => ({ t: a[0], w: a[1] }));
 
-            if (benchmarkData) {
-                datasets.push({
-                    label: `Benchmark (${benchmarkTicker})`,
-                    data: benchmarkData,
-                    borderColor: '#00f3ff',
-                    borderWidth: 2,
-                    borderDash: [5, 5],
-                    fill: false,
-                    tension: 0.2,
-                    pointRadius: 3
-                });
-            }
+/* Helpers de formato y acceso */
+const $ = id => document.getElementById(id);
+const usd = (n, s) => (s && n > 0 ? '+' : n < 0 ? '−' : '') + '$' + Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const pct = (n, s = true) => (s && n > 0 ? '+' : n < 0 ? '−' : '') + Math.abs(n).toFixed(2) + '%';
+const cls = n => n >= 0 ? 'up' : 'down';
+const fd = d => { const p = d.split('-'); return +p[2] + ' ' + MN[+p[1] - 1]; };
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const LEG = { position: 'bottom', labels: { color: css('--muted'), usePointStyle: true, boxWidth: 8, font: { size: 11 } } };
+const CHIDS = { line: 'lineChart', dd: 'ddChart', al: 'assetChart', drift: 'driftChart', ct: 'contribChart', pd: 'pieD' };
+const IDX = {};
+let CD = null, CDk = '';
 
-            chartInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: datasets
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: '#e2e8f0',
-                                font: { family: 'Orbitron', size: 12 }
-                            }
-                        },
-                        tooltip: {
-                            backgroundColor: '#060a12',
-                            titleColor: '#00ff66',
-                            bodyColor: '#fff',
-                            borderColor: '#00ff66',
-                            borderWidth: 1,
-                            callbacks: {
-                                label: function(context) {
-                                    return context.dataset.label + ': $' + context.parsed.y.toFixed(2);
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                            ticks: { color: '#64748b', font: { family: 'JetBrains Mono' } }
-                        },
-                        y: {
-                            grid: { color: 'rgba(0, 255, 102, 0.1)' },
-                            ticks: { 
-                                color: '#64748b', 
-                                font: { family: 'JetBrains Mono' },
-                                callback: function(value) { return '$' + value; }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-    </script>
-</body>
-</html>
+/* Cache de índices por fecha y de fechas comunes entre activos */
+function im(t) { return IDX[t] || (IDX[t] = indexMap(t)); }
+function clearCaches() { for (const k in IDX) delete IDX[k]; CD = null; CDk = ''; }
+function commonDates() {
+  if (!assets.length) return [];
+  const k = assets.map(a => a.t).sort().join('|');
+  if (CD && CDk === k) return CD;
+  let d = DATA[assets[0].t].dates.slice();
+  for (let i = 1; i < assets.length; i++) {
+    const s = new Set(DATA[assets[i].t].dates);
+    d = d.filter(x => s.has(x));
+  }
+  CD = d; CDk = k; return CD;
+}
+function indexMap(t) { const m = {}; DATA[t].dates.forEach((d, i) => m[d] = i); return m; }
+function tickers() { return Object.keys(DATA); }
+
+/* Reutiliza instancias de Chart.js si la firma no ha cambiado */
+function makeChart(key, cfg, sig) {
+  const slot = charts[key];
+  if (slot && slot.sig === sig) {
+    slot.inst.data = cfg.data;
+    slot.inst.options = cfg.options;
+    slot.inst.update();
+    return slot.inst;
+  }
+  if (slot) slot.inst.destroy();
+  const inst = new Chart($(CHIDS[key]), cfg);
+  charts[key] = { inst, sig };
+  return inst;
+}
+
+function sumW() { return assets.reduce((a, b) => a + (+b.w || 0), 0); }
+
+/* ============================================================
+   RENDER DE CONTROLES DEL SIMULADOR
+   ============================================================ */
+function fillStart() {
+  const s = $('start');
+  if (!assets.length) { s.innerHTML = ''; return; }
+  const d = commonDates();
+  s.innerHTML = '';
+  d.forEach((dt, i) => {
+    const o = document.createElement('option');
+    o.value = i;
+    o.textContent = fd(dt) + ' · ' + DATA[assets[0].t].closes[im(assets[0].t)[dt]].toFixed(2);
+    s.appendChild(o);
+  });
+  if (startIdx >= d.length) startIdx = 0;
+  s.value = startIdx;
+}
+
+function fillBench() {
+  const b = $('bench'), cur = b.value;
+  b.innerHTML = '<option value="">Nada</option>';
+  tickers().forEach(t => {
+    const o = document.createElement('option');
+    o.value = t; o.textContent = t;
+    b.appendChild(o);
+  });
+  b.value = cur;
+}
+
+function renderAssetRows() {
+  $('assetList').innerHTML = assets.map((a, i) => {
+    const opts = tickers()
+      .filter(t => t === a.t || !assets.some(x => x.t === t))
+      .map(t => '<option ' + (t === a.t ? 'selected' : '') + '>' + t + '</option>').join('');
+    return '<div class="assetrow">'
+      + '<select data-i="' + i + '" class="tk">' + opts + '</select>'
+      + '<input data-i="' + i + '" class="wt" type="number" min="0" max="100" step="0.5" value="' + a.w + '">'
+      + '<button type="button" class="rm" data-i="' + i + '" title="Quitar">✕</button>'
+      + '</div>';
+  }).join('') || '<div class="msg bad">Portafolio vacío. Añade activos o usa una plantilla.</div>';
+
+  document.querySelectorAll('.tk').forEach(s => s.onchange = e => {
+    assets[+e.target.dataset.i].t = e.target.value;
+    fillStart(); render();
+  });
+  document.querySelectorAll('.wt').forEach(s => s.oninput = e => {
+    assets[+e.target.dataset.i].w = +e.target.value;
+    updateSum(); render();
+  });
+  document.querySelectorAll('.rm').forEach(b => b.onclick = e => {
+    assets.splice(+e.target.dataset.i, 1);
+    fillStart(); renderAssetRows(); render();
+  });
+  updateSum();
+}
+
+/* Verifica que la suma sea exactamente 100% */
+function updateSum() {
+  const s = sumW();
+  $('sumW').textContent = s.toFixed(1);
+  $('sumFill').style.width = Math.min(s, 100) + '%';
+  $('sumFill').style.background = Math.abs(s - 100) < 0.01 ? 'var(--up)' : (s > 100 ? 'var(--down)' : 'var(--gold)');
+  const m = $('sumMsg');
+  if (!assets.length) {
+    m.className = 'msg bad';
+    m.textContent = 'Añade al menos un activo.';
+    return false;
+  }
+  if (Math.abs(s - 100) > 0.01) {
+    m.className = 'msg bad';
+    m.textContent = 'La suma es ' + s.toFixed(1) + '%. Ajusta para llegar a 100% — así funciona un portafolio real.';
+    return false;
+  }
+  const small = assets.filter(a => a.w > 0 && a.w < 5);
+  m.className = 'msg good';
+  m.textContent = '✓ Pesos válidos · simulando compra y mantenimiento desde ' + fd(commonDates()[startIdx]) + '.'
+    + (small.length ? ' Ojo: ' + small.map(a => a.t).join(', ') + ' con menos de 5%: posiciones muy chicas aportan poco y exigen vigilar más empresas.' : '');
+  return true;
+}
+
+/* Botones / eventos del simulador */
+$('addAsset').onclick = () => {
+  const free = tickers().find(t => !assets.some(a => a.t === t));
+  if (!free) return;
+  const rem = 100 - sumW();
+  assets.push({ t: free, w: rem > 0 && rem <= 100 ? +rem.toFixed(1) : 0 });
+  fillStart(); renderAssetRows(); render();
+};
+
+document.querySelectorAll('[data-preset
